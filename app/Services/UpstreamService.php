@@ -65,19 +65,101 @@ class UpstreamService
             Logger::upstream($providerId, 0, 'sync_products', [], $resp, false);
             return ['ok' => false, 'msg' => '拉取上游产品失败: ' . ($resp['msg'] ?? '未知错误')];
         }
-        $groups = $resp['data']['first_group'] ?? [];
+        $products = self::extractProducts($resp['data'] ?? null);
         $count = 0;
-        foreach ($groups as $fg) {
-            foreach ($fg['group'] ?? [] as $g) {
-                foreach ($g['product'] ?? [] as $p) {
-                    self::syncOneProduct($provider, $client, $p);
-                    $count++;
-                }
-            }
+        foreach ($products as $p) {
+            self::syncOneProduct($provider, $client, $p);
+            $count++;
         }
         DB::update('upstream_providers', ['last_sync_at' => date('Y-m-d H:i:s')], '`id` = :id', ['id' => $providerId]);
-        Logger::upstream($providerId, 0, 'sync_products', ['count' => $count], ['ok' => true], true);
-        return ['ok' => true, 'msg' => "同步完成，共 {$count} 个产品", 'count' => $count];
+        $dataKeys = is_array($resp['data'] ?? null) ? array_keys($resp['data']) : [gettype($resp['data'] ?? null)];
+        Logger::upstream(
+            $providerId,
+            0,
+            'sync_products',
+            ['count' => $count, 'data_keys' => $dataKeys],
+            ['ok' => true, 'data_sample' => mb_substr(json_encode($resp['data'] ?? null, JSON_UNESCAPED_UNICODE), 0, 1500)],
+            true
+        );
+        $msg = "同步完成，共 {$count} 个产品";
+        if ($count === 0) {
+            $msg .= "（上游 data 顶层字段: " . implode(',', $dataKeys) . "，详见上游日志）";
+        }
+        return ['ok' => true, 'msg' => $msg, 'count' => $count];
+    }
+
+    /**
+     * 从上游商品接口的 data 中提取产品列表（兼容多种返回结构）
+     * 标准结构: data.first_group[].group[].product[]
+     * 兼容: data.first_group[].product[] / data.list / data.products / data 本身为列表
+     */
+    protected static function extractProducts($data): array
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+        // 1) 标准嵌套结构
+        if (isset($data['first_group']) && is_array($data['first_group'])) {
+            $out = [];
+            foreach ($data['first_group'] as $fg) {
+                if (!is_array($fg)) {
+                    continue;
+                }
+                foreach ($fg['group'] ?? [] as $g) {
+                    if (!is_array($g)) {
+                        continue;
+                    }
+                    foreach ($g['product'] ?? [] as $p) {
+                        if (is_array($p)) {
+                            $out[] = $p;
+                        }
+                    }
+                }
+                // 兼容一级分组下直接挂 product
+                foreach ($fg['product'] ?? [] as $p) {
+                    if (is_array($p)) {
+                        $out[] = $p;
+                    }
+                }
+            }
+            return $out;
+        }
+        // 2) data.list / data.products / data.items / data.data
+        foreach (['list', 'products', 'items', 'data'] as $k) {
+            if (isset($data[$k]) && is_array($data[$k])) {
+                return self::flattenProducts($data[$k]);
+            }
+        }
+        // 3) data 本身就是列表（兼容 PHP < 8.1，无 array_is_list）
+        if ($data === array_values($data)) {
+            return self::flattenProducts($data);
+        }
+        return [];
+    }
+
+    /** 拍平可能嵌套 group/product 的产品数组 */
+    protected static function flattenProducts(array $items): array
+    {
+        $out = [];
+        foreach ($items as $it) {
+            if (!is_array($it)) {
+                continue;
+            }
+            if (isset($it['product']) && is_array($it['product'])) {
+                foreach ($it['product'] as $p) {
+                    if (is_array($p)) {
+                        $out[] = $p;
+                    }
+                }
+                continue;
+            }
+            if (isset($it['group']) && is_array($it['group'])) {
+                $out = array_merge($out, self::flattenProducts($it['group']));
+                continue;
+            }
+            $out[] = $it;
+        }
+        return $out;
     }
 
     /** 同步单个产品：基本信息 + 周期价格 + 配置选项 */
