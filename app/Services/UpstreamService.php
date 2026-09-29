@@ -34,23 +34,31 @@ class UpstreamService
         return DB::get("SELECT * FROM `upstream_providers` WHERE `id` = ? LIMIT 1", [$id]);
     }
 
-    /** 测试连接：登录 + 拉取一条商品 */
+    /** 测试连接：登录 + 拉取一条商品；v1 登录失败时尝试魔方 V10 公开接口 */
     public static function testConnection(array $provider): array
     {
         $client = self::client($provider);
         $lr = $client->login(true);
-        if (!$lr['ok']) {
-            return $lr;
+        if ($lr['ok']) {
+            $resp = $client->getProducts(['limit' => 1]);
+            if ((int)($resp['status'] ?? 0) === 200) {
+                return ['ok' => true, 'msg' => '连接成功，API 登录与商品接口均正常'];
+            }
+            return ['ok' => false, 'msg' => '登录成功但商品接口异常: ' . ($resp['msg'] ?? '未知错误')];
         }
-        $resp = $client->getProducts(['limit' => 1]);
-        if ((int)($resp['status'] ?? 0) === 200) {
-            return ['ok' => true, 'msg' => '连接成功，API 登录与商品接口均正常'];
+        // v1 登录失败时，尝试魔方 V10 公开商品接口（无需鉴权）
+        $v10 = $client->getProductsV10();
+        if ((int)($v10['status'] ?? 0) === 200) {
+            $n = count(self::extractProducts($v10['data'] ?? null));
+            return ['ok' => true, 'msg' => "连接成功（魔方V10公开接口），商品接口正常，读取到 {$n} 个产品"];
         }
-        return ['ok' => false, 'msg' => '登录成功但商品接口异常: ' . ($resp['msg'] ?? '未知错误')];
+        return $lr;
     }
 
     /**
      * 同步上游产品到本地（幂等）
+     * 先试财务 v1 接口（/v1/products，first_group 嵌套结构）；
+     * 若无产品，再试魔方 V10 公开接口（/api/product/list，data.list 扁平结构）。
      * @return array ['ok'=>bool,'msg'=>string,'count'=>int]
      */
     public static function syncProducts(int $providerId): array
@@ -61,11 +69,24 @@ class UpstreamService
         }
         $client = self::client($provider);
         $resp = $client->getProducts();
+        $apiVer = 'v1';
         if ((int)($resp['status'] ?? 0) !== 200) {
             Logger::upstream($providerId, 0, 'sync_products', [], $resp, false);
             return ['ok' => false, 'msg' => '拉取上游产品失败: ' . ($resp['msg'] ?? '未知错误')];
         }
         $products = self::extractProducts($resp['data'] ?? null);
+        // v1 无产品时，fallback 到 V10 公开接口
+        if (!$products) {
+            $v10 = $client->getProductsV10();
+            if ((int)($v10['status'] ?? 0) === 200) {
+                $v10Products = self::extractProducts($v10['data'] ?? null);
+                if ($v10Products) {
+                    $products = $v10Products;
+                    $apiVer = 'v10';
+                    $resp = $v10;
+                }
+            }
+        }
         $count = 0;
         foreach ($products as $p) {
             self::syncOneProduct($provider, $client, $p);
@@ -77,11 +98,14 @@ class UpstreamService
             $providerId,
             0,
             'sync_products',
-            ['count' => $count, 'data_keys' => $dataKeys],
+            ['count' => $count, 'api' => $apiVer, 'data_keys' => $dataKeys],
             ['ok' => true, 'data_sample' => mb_substr(json_encode($resp['data'] ?? null, JSON_UNESCAPED_UNICODE), 0, 1500)],
             true
         );
         $msg = "同步完成，共 {$count} 个产品";
+        if ($apiVer === 'v10') {
+            $msg .= "（魔方V10接口）";
+        }
         if ($count === 0) {
             $msg .= "（上游 data 顶层字段: " . implode(',', $dataKeys) . "，详见上游日志）";
         }
@@ -184,9 +208,20 @@ class UpstreamService
                 'upstream_setup_fee' => (float)($c['setup_fee'] ?? 0),
             ];
         }
-        // 兼容列表接口自带的价格字段
+        // 兼容列表接口自带的价格字段（V10 /api/product/list 扁平结构：product_price/price + billingcycle）
         if (!$cycles && !empty($p['billingcycle'])) {
             $cycles = is_array($p['billingcycle']) ? $p['billingcycle'] : [$p['billingcycle']];
+            if (!$prices) {
+                $up = (float)($p['product_price'] ?? $p['price'] ?? 0);
+                foreach ($cycles as $bc) {
+                    if ($bc && $up > 0) {
+                        $prices[$bc] = [
+                            'upstream_price' => $up,
+                            'upstream_setup_fee' => (float)($p['setup_fee'] ?? 0),
+                        ];
+                    }
+                }
+            }
         }
 
         $exist = DB::get(

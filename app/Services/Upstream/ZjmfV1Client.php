@@ -102,6 +102,21 @@ class ZjmfV1Client
         return $this->api('GET', '/v1/products', $params);
     }
 
+    /**
+     * 魔方 V10 商品列表（公开接口，无需鉴权）
+     * GET /api/product/list → {status:200, data:{list:[...]}}
+     * 产品为扁平结构，字段: id/type/gid/name/description/product_price|price/billingcycle/qty
+     */
+    public function getProductsV10(array $params = []): array
+    {
+        $res = Http::request('GET', $this->baseUrl . '/api/product/list', $params, [], 30);
+        $json = Http::json($res);
+        if ($json === null) {
+            return ['status' => 400, 'msg' => '上游返回非 JSON: ' . ($res['error'] ?: mb_substr($res['body'], 0, 200)), 'data' => null];
+        }
+        return $json;
+    }
+
     /** 商品详情（含可配置选项、自定义字段、周期价格） */
     public function getProductConfig(int $productId): array
     {
