@@ -1,7 +1,8 @@
 <div class="container section">
+  <?php $stock = stock_status($product); ?>
   <div class="detail-grid">
     <div class="card">
-      <h2 style="margin-bottom:8px"><?= e($product['name']) ?></h2>
+      <h2 style="margin-bottom:8px"><?= e($product['name']) ?> <span class="badge <?= $stock['badge'] ?>"><?= e($stock['label']) ?></span></h2>
       <div style="color:var(--muted);font-size:14px;margin-bottom:16px"><?= clean_product_html($product['description']) ?></div>
 
       <div class="opt-group">
@@ -58,13 +59,19 @@
           <input class="form-control" name="coupon_code" maxlength="32" style="text-transform:uppercase" placeholder="如有优惠券请输入券码">
         </div>
         <div class="kv"><span>应付金额</span><span style="font-size:20px;color:var(--danger);font-weight:700" id="totalPrice">—</span></div>
+        <?php if ($stock['in']): ?>
         <button class="btn btn-primary" type="submit" style="width:100%;margin-top:12px">立即购买</button>
+        <?php else: ?>
+        <div style="background:#fef2f2;color:#991b1b;padding:10px 14px;border-radius:8px;margin-top:12px;font-size:14px">该产品暂时缺货，补货后可购买。如有需要请联系客服。</div>
+        <button class="btn" type="button" disabled style="width:100%;margin-top:12px;opacity:.6">缺货，暂无法购买</button>
+        <?php endif; ?>
       </form>
     </div>
 
     <div class="card">
       <h3>产品说明</h3>
       <div class="kv"><span>产品类型</span><span><?= e($product['type']) ?></span></div>
+      <div class="kv"><span>库存状态</span><span><span class="badge <?= $stock['badge'] ?>"><?= e($stock['label']) ?></span></span></div>
       <div class="kv"><span>开通方式</span><span>自动开通</span></div>
       <div class="kv"><span>售后支持</span><span>工单支持</span></div>
     </div>

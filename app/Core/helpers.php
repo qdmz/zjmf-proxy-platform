@@ -29,9 +29,19 @@ function e($s): string {
 }
 
 /**
- * 产品描述 HTML 清洗：上游返回的描述多为转义过的规格 HTML，
- * 先解码实体，再按白名单保留排版标签（去 script/iframe 等风险标签）。
+ * 库存状态：['in'=>是否可购买, 'label'=>显示文字, 'badge'=>badge样式类]
  */
+function stock_status($p): array {
+    $control = !empty($p['stock_control']);
+    $qty = (int)($p['stock_qty'] ?? 0);
+    if (!$control) {
+        return ['in' => true, 'label' => '有货', 'badge' => 'badge-active'];
+    }
+    if ($qty > 0) {
+        return ['in' => true, 'label' => '库存 ' . $qty . ' 件', 'badge' => 'badge-unpaid'];
+    }
+    return ['in' => false, 'label' => '缺货', 'badge' => 'badge-failed'];
+}
 function clean_product_html($html): string {
     $html = html_entity_decode((string)($html ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     return strip_tags($html, '<br><p><li><ul><ol><span><div><b><strong><i><em><u><font><table><tr><td><th><tbody><thead><h1><h2><h3><h4><h5><img><a><blockquote><hr>');

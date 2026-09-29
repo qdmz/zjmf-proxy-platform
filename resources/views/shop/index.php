@@ -11,8 +11,9 @@
   <?php else: ?>
     <div class="grid">
       <?php foreach ($products as $p): ?>
+        <?php $st = stock_status($p); ?>
         <div class="card">
-          <h3><?= e($p['name']) ?></h3>
+          <h3><?= e($p['name']) ?> <span class="badge <?= $st['badge'] ?>"><?= e($st['label']) ?></span></h3>
           <div class="meta"><?= e(mb_substr(strip_tags($p['description'] ?? ''), 0, 80)) ?></div>
           <div class="price">
             <?php if ($p['min_price'] !== null): ?><?= e(money((float)$p['min_price'])) ?><small>/月起</small><?php else: ?><small>询价</small><?php endif; ?>
