@@ -152,6 +152,12 @@ class ZjmfV1Client
         return $this->api('POST', '/v1/cart/checkout', $params);
     }
 
+    /** 查询上游产品库存：GET /v1/cart/stock_control?pid=上游产品ID */
+    public function cartStockControl(int $upstreamPid): array
+    {
+        return $this->api('GET', '/v1/cart/stock_control', ['pid' => $upstreamPid]);
+    }
+
     /** 余额支付账单 → status=1001 + hostid 表示开通成功 */
     public function invoiceFund(int $invoiceId): array
     {

@@ -41,6 +41,28 @@ class OrderService
         if ($product['stock_control'] && (int)$product['stock_qty'] < $qty) {
             return ['ok' => false, 'msg' => '库存不足'];
         }
+        // 下单前先查上游实时库存，避免用户付款后才发现缺货
+        if ((int)$product['upstream_pid'] > 0 && (int)$product['provider_id'] > 0) {
+            $provider = UpstreamService::get((int)$product['provider_id']);
+            if ($provider && (int)$provider['status']) {
+                try {
+                    $client = UpstreamService::client($provider);
+                    $stock = $client->cartStockControl((int)$product['upstream_pid']);
+                    $up = $stock['data']['product'] ?? null;
+                    if ((int)($stock['status'] ?? 0) !== 200 || empty($up)) {
+                        return ['ok' => false, 'msg' => '上游库存查询失败，请稍后重试'];
+                    }
+                    if ((int)($up['hidden'] ?? 0) === 1) {
+                        return ['ok' => false, 'msg' => '该产品上游已下架'];
+                    }
+                    if (!empty($up['stock_control']) && (int)($up['qty'] ?? 0) < $qty) {
+                        return ['ok' => false, 'msg' => '上游库存不足，暂无法购买'];
+                    }
+                } catch (\Throwable $e) {
+                    // 上游查询异常时不拦截下单，后续开通流程仍有库存校验
+                }
+            }
+        }
         $quote = BillingService::quote($productId, $cycle, $configoption);
         if (!$quote['ok']) {
             return $quote;
