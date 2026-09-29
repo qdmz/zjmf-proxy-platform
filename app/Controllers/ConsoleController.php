@@ -22,7 +22,7 @@ class ConsoleController extends Controller
              LEFT JOIN `upstream_providers` up ON up.id = h.provider_id
              WHERE h.`user_id` = ?
                AND h.`status` != 'failed'
-               AND NOT (h.`status` = 'pending' AND h.`upstream_host_id` = 0)
+               AND h.`upstream_host_id` > 0
              ORDER BY h.`id` DESC",
             [(int)$user['id']]
         );
