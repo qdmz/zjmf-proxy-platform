@@ -155,4 +155,23 @@ class PayController extends Controller
             'user' => $user,
         ]);
     }
+
+    /** 用户账单明细 */
+    public function bills(): string
+    {
+        $user = $this->requireLogin();
+        $page = $this->page();
+        $per = $this->perPage();
+        $total = DB::count("SELECT COUNT(*) FROM `bills` WHERE `user_id` = ?", [(int)$user['id']]);
+        $list = DB::all(
+            "SELECT * FROM `bills` WHERE `user_id` = ? ORDER BY `id` DESC LIMIT ? OFFSET ?",
+            [(int)$user['id'], $per, ($page - 1) * $per]
+        );
+        return $this->view('pay/bills', [
+            'title' => '账单明细',
+            'list' => $list,
+            'pagination' => paginate($total, $page, $per, '/bills'),
+            'user' => $user,
+        ]);
+    }
 }

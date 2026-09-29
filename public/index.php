@@ -41,6 +41,7 @@ $router->get('/pay/result/{billNo}', 'PayController@result');
 $router->get('/recharge', 'PayController@recharge');
 $router->post('/recharge', 'PayController@doRecharge');
 $router->get('/transactions', 'PayController@transactions');
+$router->get('/bills', 'PayController@bills');
 
 // ---------------- 用户控制台 ----------------
 $router->get('/console', 'ConsoleController@index');

@@ -111,6 +111,24 @@ function order_status_name(string $s): string
     return $map[$s] ?? $s;
 }
 
+/** 账单状态中文 */
+function bill_status_name(string $s): string
+{
+    static $map = [
+        'unpaid' => '未支付', 'paid' => '已支付', 'refunded' => '已退款',
+    ];
+    return $map[$s] ?? $s;
+}
+
+/** 账单类型中文 */
+function bill_type_name(string $s): string
+{
+    static $map = [
+        'order' => '新购', 'renew' => '续费', 'upgrade' => '升级', 'recharge' => '充值',
+    ];
+    return $map[$s] ?? $s;
+}
+
 /** 资金流水类型中文 */
 function tx_type_name(string $t): string
 {

@@ -2,7 +2,7 @@
   <div class="auth-box" style="max-width:520px">
     <div class="card">
       <h2>账户充值</h2>
-      <p style="color:var(--muted);font-size:14px;margin-bottom:16px">当前余额：<?= e(money((float)$user['balance'])) ?></p>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:16px">当前余额：<?= e(money((float)$user['balance'])) ?>　<a href="/transactions">资金流水</a>　<a href="/bills">账单明细</a></p>
       <?php if (!$epayEnabled): ?>
         <div class="notice">在线充值暂未开通，请联系管理员。</div>
       <?php else: ?>
