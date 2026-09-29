@@ -143,12 +143,13 @@ class ZjmfV1Client
     }
 
     /** 结算购物车 → 生成账单；免费订单直接返回 status=1001 + hostid */
-    public function cartCheckout(string $payment = 'credit', array $position = [0]): array
+    public function cartCheckout(string $payment = '', array $position = [0]): array
     {
-        return $this->api('POST', '/v1/cart/checkout', [
-            'payment' => $payment,
-            'position' => $position,
-        ]);
+        $params = ['position' => $position];
+        if ($payment !== '') {
+            $params['payment'] = $payment;
+        }
+        return $this->api('POST', '/v1/cart/checkout', $params);
     }
 
     /** 余额支付账单 → status=1001 + hostid 表示开通成功 */

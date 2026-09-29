@@ -228,10 +228,10 @@ class OrderService
                 throw new \RuntimeException('上游加购失败: ' . ($r1['msg'] ?? '未知错误'));
             }
 
-            // 2. 结算（支付方式可在供货商配置中调整）
-            $r2 = $client->cartCheckout($provider['checkout_payment'] ?? 'credit', [0]);
+            // 2. 结算：不传 payment（上游源码确认 payment 为空时跳过网关校验，直接生成账单）
+            $r2 = $client->cartCheckout('', [0]);
             $checkoutOk = in_array((int)($r2['status'] ?? 0), [200, 1001], true);
-            Logger::upstream((int)$provider['id'], (int)$hostId, 'cart_checkout', ['payment' => $provider['checkout_payment'] ?? 'credit'], $r2, $checkoutOk);
+            Logger::upstream((int)$provider['id'], (int)$hostId, 'cart_checkout', ['payment' => '(empty)'], $r2, $checkoutOk);
             $status = (int)($r2['status'] ?? 0);
             $upstreamHostId = 0;
             $invoiceId = 0;
