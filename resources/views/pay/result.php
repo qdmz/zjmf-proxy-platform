@@ -10,6 +10,11 @@
         <?php else: ?>
           <a href="/console" class="btn btn-primary" style="margin-top:16px">前往控制台</a>
         <?php endif; ?>
+      <?php elseif ($bill && $bill['status'] === 'refunded'): ?>
+        <div style="font-size:48px">↩️</div>
+        <h2>已退款</h2>
+        <p>账单 <?= e($bill['bill_no']) ?>（<?= e(money((float)$bill['amount'])) ?>）因开通失败，款项已退回您的余额。</p>
+        <a href="/console" class="btn btn-primary" style="margin-top:16px">前往控制台</a>
       <?php else: ?>
         <div style="font-size:48px">⏳</div>
         <h2>等待支付</h2>

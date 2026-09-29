@@ -135,6 +135,9 @@ class OrderService
         if ($bill['status'] === 'paid') {
             return ['ok' => true, 'msg' => '账单已处理'];
         }
+        if ($bill['status'] !== 'unpaid') {
+            return ['ok' => false, 'msg' => '账单状态异常，无法支付'];
+        }
         DB::beginTransaction();
         try {
             DB::update('bills', [
@@ -283,15 +286,58 @@ class OrderService
             DB::update('hosts', ['status' => 'pending'], '`id` = :id', ['id' => $hostId]);
         }
         $order = DB::get("SELECT * FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
+        $refunded = false;
         if ($order) {
+            // 下单时预扣的库存还回去（仅新购订单）
+            if ($order['type'] === 'new') {
+                $p = DB::get("SELECT `stock_control` FROM `products` WHERE `id` = ? LIMIT 1", [(int)$order['product_id']]);
+                if ($p && (int)$p['stock_control']) {
+                    DB::query(
+                        "UPDATE `products` SET `stock_qty` = `stock_qty` + ? WHERE `id` = ?",
+                        [max(1, (int)$order['qty']), (int)$order['product_id']]
+                    );
+                }
+            }
+            $refunded = self::refundBillForOrder((int)$order['id'], $reason);
             DB::insert('messages', [
                 'user_id' => (int)$order['user_id'],
                 'title' => '服务器开通失败',
-                'content' => "订单 {$order['order_no']} 自动开通失败：{$reason}，请联系客服处理或在后台重试开通。",
+                'content' => "订单 {$order['order_no']} 自动开通失败：{$reason}。"
+                    . ($refunded ? '款项已退回您的余额，可重新下单。' : '请联系客服处理或在后台重试开通。'),
             ]);
         }
-        Logger::log("provision failed order #{$orderId}: {$reason}");
-        return ['ok' => false, 'msg' => $reason];
+        Logger::log("provision failed order #{$orderId}: {$reason}" . ($refunded ? ' (refunded)' : ''));
+        return ['ok' => false, 'msg' => $reason . ($refunded ? '（已退款到余额）' : '')];
+    }
+
+    /**
+     * 开通/续费失败时，将已支付账单退回用户余额（幂等：仅处理 status=paid 的账单）
+     */
+    protected static function refundBillForOrder(int $orderId, string $reason): bool
+    {
+        $bill = DB::get(
+            "SELECT * FROM `bills` WHERE `order_id` = ? AND `type` IN ('order','renew') ORDER BY `id` DESC LIMIT 1",
+            [$orderId]
+        );
+        if (!$bill || $bill['status'] !== 'paid' || (float)$bill['amount'] <= 0) {
+            return false;
+        }
+        try {
+            PaymentService::addBalance(
+                (int)$bill['user_id'],
+                (float)$bill['amount'],
+                'refund',
+                '开通失败退款，账单 ' . $bill['bill_no'] . '：' . mb_substr($reason, 0, 60)
+            );
+        } catch (\Throwable $e) {
+            Logger::log("refund failed bill #{$bill['id']}: " . $e->getMessage());
+            return false;
+        }
+        $n = DB::query(
+            "UPDATE `bills` SET `status` = 'refunded' WHERE `id` = ? AND `status` = 'paid'",
+            [(int)$bill['id']]
+        )->rowCount();
+        return $n > 0;
     }
 
     /** 生成主机初始密码并加密存储快照 */
@@ -395,7 +441,10 @@ class OrderService
             return ['ok' => true, 'msg' => '续费成功'];
         } catch (\Throwable $e) {
             Logger::log("renew failed order #{$orderId}: " . $e->getMessage());
-            return ['ok' => false, 'msg' => $e->getMessage()];
+            DB::update('orders', ['status' => 'failed', 'fail_reason' => mb_substr($e->getMessage(), 0, 250)], '`id` = :id', ['id' => $orderId]);
+            $refunded = self::refundBillForOrder($orderId, $e->getMessage());
+            $msg = $e->getMessage() . ($refunded ? '（已退款到余额）' : '');
+            return ['ok' => false, 'msg' => $msg];
         }
     }
 
@@ -405,6 +454,13 @@ class OrderService
         $order = DB::get("SELECT * FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
         if (!$order) {
             return ['ok' => false, 'msg' => '订单不存在'];
+        }
+        $bill = DB::get(
+            "SELECT * FROM `bills` WHERE `order_id` = ? AND `type` IN ('order','renew') ORDER BY `id` DESC LIMIT 1",
+            [$orderId]
+        );
+        if ($bill && $bill['status'] === 'refunded') {
+            return ['ok' => false, 'msg' => '该订单已退款，如需开通请重新下单'];
         }
         DB::update('orders', ['status' => 'paid', 'fail_reason' => ''], '`id` = :id', ['id' => $orderId]);
         return self::provision($orderId);

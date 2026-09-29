@@ -19,7 +19,7 @@ class PayController extends Controller
             http_response_code(404);
             return $this->view('errors/404', ['title' => '账单不存在']);
         }
-        if ($bill['status'] === 'paid') {
+        if (in_array($bill['status'], ['paid', 'refunded'], true)) {
             redirect('/pay/result/' . $billNo);
         }
         return $this->view('pay/cashier', [
@@ -40,7 +40,7 @@ class PayController extends Controller
             "SELECT * FROM `bills` WHERE `bill_no` = ? AND `user_id` = ? LIMIT 1",
             [$billNo, (int)$user['id']]
         );
-        if (!$bill || $bill['status'] === 'paid') {
+        if (!$bill || in_array($bill['status'], ['paid', 'refunded'], true)) {
             redirect('/pay/result/' . $billNo);
         }
         $payment = $_POST['payment'] ?? 'balance';
@@ -49,9 +49,9 @@ class PayController extends Controller
             $ret = PaymentService::payWithBalance((int)$bill['id'], (int)$user['id']);
             // 账单已扣款（无论开通是否成功）都去结果页；未扣款才回收银台提示
             $billNow = DB::get("SELECT `status` FROM `bills` WHERE `id` = ? LIMIT 1", [(int)$bill['id']]);
-            if ($billNow && $billNow['status'] === 'paid') {
+            if ($billNow && in_array($billNow['status'], ['paid', 'refunded'], true)) {
                 if (!$ret['ok']) {
-                    flash('error', $ret['msg'] . '（款项已扣除，请联系客服处理）');
+                    flash('error', $ret['msg']);
                 }
                 redirect('/pay/result/' . $billNo);
             }

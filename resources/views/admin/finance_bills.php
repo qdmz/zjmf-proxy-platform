@@ -10,6 +10,7 @@
       <option value="">全部状态</option>
       <option value="paid" <?= $filter['status'] === 'paid' ? 'selected' : '' ?>>已支付</option>
       <option value="unpaid" <?= $filter['status'] === 'unpaid' ? 'selected' : '' ?>>未支付</option>
+      <option value="refunded" <?= $filter['status'] === 'refunded' ? 'selected' : '' ?>>已退款</option>
     </select>
     <input class="form-control" name="kw" style="max-width:220px" placeholder="账单号/用户名" value="<?= e($filter['kw']) ?>">
     <button class="btn btn-sm" type="submit">筛选</button>
@@ -28,7 +29,7 @@
         <td><?= e($b['title']) ?></td>
         <td><?= e(money((float)$b['amount'])) ?></td>
         <td><?= e($b['payment'] ?? '') ?></td>
-        <td><?= $b['status'] === 'paid' ? '<span class="badge badge-paid">已支付</span>' : '<span class="badge badge-unpaid">未支付</span>' ?></td>
+        <td><?= $b['status'] === 'paid' ? '<span class="badge badge-paid">已支付</span>' : ($b['status'] === 'refunded' ? '<span class="badge" style="background:#e0e7ff;color:#3730a3">已退款</span>' : '<span class="badge badge-unpaid">未支付</span>') ?></td>
         <td><?= e($b['paid_at'] ?? '') ?></td>
       </tr>
     <?php endforeach; ?>
