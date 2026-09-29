@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($title ?? setting('site_name')) ?> - <?= e(setting('site_name')) ?></title>
-<link rel="stylesheet" href="/assets/css/app.css">
+<link rel="stylesheet" href="/assets/css/app.css?v=1.3.1">
 <meta name="csrf-token" content="<?= csrf_token() ?>">
 </head>
 <body>
@@ -48,7 +48,7 @@
     <p>&copy; <?= date('Y') ?> <?= e(setting('site_name')) ?> · <?= e(setting('site_icp') ?? '') ?></p>
   </div>
 </footer>
-<script src="/assets/js/app.js"></script>
+<script src="/assets/js/app.js?v=1.3.1"></script>
 <!-- 在线客服小部件 -->
 <div id="chatFab" title="在线客服">💬</div>
 <div id="chatPanel" style="display:none">
