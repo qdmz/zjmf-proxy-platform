@@ -17,6 +17,7 @@
       <a href="/announcements">公告</a>
       <a href="/faq">常见问题</a>
       <a href="/console">控制台</a>
+      <a href="/orders">我的订单</a>
       <a href="/tickets">工单</a>
     </nav>
     <div class="nav-user">
