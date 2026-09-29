@@ -20,7 +20,10 @@ class ConsoleController extends Controller
              FROM `hosts` h
              LEFT JOIN `products` p ON p.id = h.product_id
              LEFT JOIN `upstream_providers` up ON up.id = h.provider_id
-             WHERE h.`user_id` = ? ORDER BY h.`id` DESC",
+             WHERE h.`user_id` = ?
+               AND h.`status` != 'failed'
+               AND NOT (h.`status` = 'pending' AND h.`upstream_host_id` = 0)
+             ORDER BY h.`id` DESC",
             [(int)$user['id']]
         );
         $unread = DB::count("SELECT COUNT(*) FROM `messages` WHERE `user_id` = ? AND `is_read` = 0", [(int)$user['id']]);

@@ -284,7 +284,7 @@ class OrderService
     {
         DB::update('orders', ['status' => 'failed', 'fail_reason' => mb_substr($reason, 0, 250)], '`id` = :id', ['id' => $orderId]);
         if ($hostId > 0) {
-            DB::update('hosts', ['status' => 'pending'], '`id` = :id', ['id' => $hostId]);
+            DB::update('hosts', ['status' => 'failed'], '`id` = :id', ['id' => $hostId]);
         }
         $order = DB::get("SELECT * FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
         $refunded = false;
