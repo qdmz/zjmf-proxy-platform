@@ -8,6 +8,30 @@ use App\Services\OrderService;
 
 class OrderController extends Controller
 {
+    /** AJAX 验证优惠券：返回折扣金额 */
+    public function checkCoupon(): void
+    {
+        $user = $this->requireLogin();
+        $code = trim($_POST['coupon_code'] ?? '');
+        $productId = (int)($_POST['product_id'] ?? 0);
+        $cycle = $_POST['billingcycle'] ?? 'monthly';
+        if ($code === '' || $productId <= 0) {
+            json_fail('参数不完整');
+        }
+        $quote = \App\Services\BillingService::quote($productId, $cycle, []);
+        if (!$quote['ok']) {
+            json_fail($quote['msg']);
+        }
+        $cv = coupon_validate($code, (int)$user['id'], (float)$quote['total']);
+        if (!$cv['ok']) {
+            json_fail($cv['msg']);
+        }
+        json_ok([
+            'discount' => (float)$cv['discount'],
+            'final' => round((float)$quote['total'] - (float)$cv['discount'], 2),
+        ], '优惠券可用，立减 ' . money((float)$cv['discount']));
+    }
+
     /** 提交订单（从商品详情页） */
     public function create(): void
     {

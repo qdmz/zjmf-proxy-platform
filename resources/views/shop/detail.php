@@ -56,7 +56,11 @@
         </div>
         <div class="form-group">
           <label>优惠券码（可选）</label>
-          <input class="form-control" name="coupon_code" maxlength="32" style="text-transform:uppercase" placeholder="如有优惠券请输入券码">
+          <div style="display:flex;gap:8px">
+            <input class="form-control" name="coupon_code" id="couponCode" maxlength="32" style="text-transform:uppercase;flex:1" placeholder="如有优惠券请输入券码">
+            <button type="button" class="btn btn-sm" id="couponCheck" style="white-space:nowrap">验证</button>
+          </div>
+          <div id="couponMsg" style="font-size:13px;margin-top:6px"></div>
         </div>
         <div class="kv"><span>应付金额</span><span style="font-size:20px;color:var(--danger);font-weight:700" id="totalPrice">—</span></div>
         <?php if ($stock['in']): ?>
@@ -111,6 +115,29 @@ function quote() {
       }
     });
 }
+document.getElementById('couponCheck').addEventListener('click', function () {
+  var code = document.getElementById('couponCode').value.trim();
+  var msg = document.getElementById('couponMsg');
+  if (!code) { msg.style.color = 'var(--danger)'; msg.textContent = '请先输入优惠券码'; return; }
+  msg.style.color = 'var(--muted)'; msg.textContent = '验证中…';
+  var fd = new FormData();
+  fd.append('coupon_code', code);
+  fd.append('product_id', '<?= (int)$product['id'] ?>');
+  fd.append('billingcycle', currentCycle());
+  fetch('/order/check-coupon', { method: 'POST', headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      if (j.code === 0) {
+        msg.style.color = 'var(--success)';
+        msg.textContent = j.message + '，实付 ' + j.data.final + ' 元';
+        document.getElementById('totalPrice').textContent = j.data.final + ' 元（已优惠）';
+      } else {
+        msg.style.color = 'var(--danger)';
+        msg.textContent = j.message || '验证失败';
+      }
+    })
+    .catch(function () { msg.style.color = 'var(--danger)'; msg.textContent = '网络异常，请稍后重试'; });
+});
 document.querySelectorAll('#cycles .opt-item').forEach(function (el) {
   el.addEventListener('click', function () {
     document.querySelectorAll('#cycles .opt-item').forEach(function (x) { x.classList.remove('selected'); });

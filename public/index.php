@@ -26,6 +26,7 @@ $router->get('/shop', 'ShopController@index');
 $router->get('/shop/{id}', 'ShopController@detail');
 $router->post('/shop/quote', 'ShopController@quote');
 
+$router->post('/order/check-coupon', 'OrderController@checkCoupon');
 $router->post('/order/create', 'OrderController@create');
 $router->get('/orders', 'OrderController@index');
 $router->get('/orders/{id}', 'OrderController@detail');
