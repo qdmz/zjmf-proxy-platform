@@ -230,7 +230,8 @@ class OrderService
 
             // 2. 结算（支付方式可在供货商配置中调整）
             $r2 = $client->cartCheckout($provider['checkout_payment'] ?? 'credit', [0]);
-            Logger::upstream((int)$provider['id'], (int)$hostId, 'cart_checkout', [], $r2, true);
+            $checkoutOk = in_array((int)($r2['status'] ?? 0), [200, 1001], true);
+            Logger::upstream((int)$provider['id'], (int)$hostId, 'cart_checkout', ['payment' => $provider['checkout_payment'] ?? 'credit'], $r2, $checkoutOk);
             $status = (int)($r2['status'] ?? 0);
             $upstreamHostId = 0;
             $invoiceId = 0;
