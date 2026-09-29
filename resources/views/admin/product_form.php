@@ -9,7 +9,7 @@
       </div>
       <div class="form-group">
         <label>描述</label>
-        <textarea class="form-control" name="description" rows="3"><?= e($product['description']) ?></textarea>
+        <textarea class="form-control" name="description" rows="3"><?= e(html_entity_decode($product['description'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></textarea>
       </div>
       <div class="form-group">
         <label>加价方式</label>

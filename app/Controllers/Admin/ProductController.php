@@ -66,7 +66,7 @@ class ProductController extends Controller
         }
         $data = [
             'name' => trim($_POST['name'] ?? $product['name']),
-            'description' => trim($_POST['description'] ?? ''),
+            'description' => trim(html_entity_decode($_POST['description'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8')),
             'status' => (int)($_POST['status'] ?? 0),
             'sort' => (int)($_POST['sort'] ?? 0),
             'group_name' => mb_substr(trim($_POST['group_name'] ?? ''), 0, 50),
