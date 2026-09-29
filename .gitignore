@@ -1,0 +1,6 @@
+config/config.php
+*.zip
+*.log
+.env
+storage/logs/
+.DS_Store

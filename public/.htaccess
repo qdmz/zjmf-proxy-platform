@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# 安全：禁止直接访问敏感文件
+<FilesMatch "\.(env|log|sql)$">
+    Require all denied
+</FilesMatch>
+
+<Files "install.php">
+    # 安装完成后建议删除 install.php
+</Files>
