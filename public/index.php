@@ -29,6 +29,8 @@ $router->post('/shop/quote', 'ShopController@quote');
 $router->post('/order/create', 'OrderController@create');
 $router->get('/orders', 'OrderController@index');
 $router->get('/orders/{id}', 'OrderController@detail');
+$router->post('/orders/{id}/cancel', 'OrderController@cancel');
+$router->post('/orders/{id}/delete', 'OrderController@destroy');
 
 // ---------------- 支付 ----------------
 $router->get('/pay/{billNo}', 'PayController@cashier');

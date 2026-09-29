@@ -90,4 +90,65 @@ class OrderController extends Controller
             'user' => $user,
         ]);
     }
+
+    /** 取消订单（仅待支付） */
+    public function cancel(string $id): void
+    {
+        $user = $this->requireLogin();
+        csrf_check();
+        $order = DB::get(
+            "SELECT * FROM `orders` WHERE `id` = ? AND `user_id` = ? LIMIT 1",
+            [(int)$id, (int)$user['id']]
+        );
+        if (!$order) {
+            flash('error', '订单不存在');
+            redirect('/orders');
+        }
+        if ($order['status'] !== 'pending') {
+            flash('error', '该订单当前状态不可取消');
+            redirect('/orders/' . (int)$id);
+        }
+        DB::beginTransaction();
+        try {
+            DB::update('orders', ['status' => 'cancelled'], '`id` = :id', ['id' => (int)$id]);
+            // 删除关联的未支付账单
+            DB::delete('bills', '`order_id` = :oid AND `status` = \'unpaid\'', ['oid' => (int)$id]);
+            DB::commit();
+            flash('success', '订单已取消');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            flash('error', '取消失败，请稍后重试');
+        }
+        redirect('/orders');
+    }
+
+    /** 删除订单（仅已取消/开通失败） */
+    public function destroy(string $id): void
+    {
+        $user = $this->requireLogin();
+        csrf_check();
+        $order = DB::get(
+            "SELECT * FROM `orders` WHERE `id` = ? AND `user_id` = ? LIMIT 1",
+            [(int)$id, (int)$user['id']]
+        );
+        if (!$order) {
+            flash('error', '订单不存在');
+            redirect('/orders');
+        }
+        if (!in_array($order['status'], ['cancelled', 'failed'], true)) {
+            flash('error', '该订单当前状态不可删除');
+            redirect('/orders/' . (int)$id);
+        }
+        DB::beginTransaction();
+        try {
+            DB::delete('bills', '`order_id` = :oid', ['oid' => (int)$id]);
+            DB::delete('orders', '`id` = :id', ['id' => (int)$id]);
+            DB::commit();
+            flash('success', '订单已删除');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            flash('error', '删除失败，请稍后重试');
+        }
+        redirect('/orders');
+    }
 }

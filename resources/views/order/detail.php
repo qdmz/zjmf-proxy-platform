@@ -32,6 +32,17 @@
       <?php else: ?>
         <p>无账单</p>
       <?php endif; ?>
+      <?php if ($order['status'] === 'pending'): ?>
+        <form method="post" action="/orders/<?= (int)$order['id'] ?>/cancel" style="margin-top:12px" onsubmit="return confirm('确定取消该订单吗？')">
+          <?= csrf_field() ?>
+          <button type="submit" class="btn" style="width:100%">取消订单</button>
+        </form>
+      <?php elseif (in_array($order['status'], ['cancelled', 'failed'], true)): ?>
+        <form method="post" action="/orders/<?= (int)$order['id'] ?>/delete" style="margin-top:12px" onsubmit="return confirm('确定删除该订单吗？删除后不可恢复。')">
+          <?= csrf_field() ?>
+          <button type="submit" class="btn btn-danger" style="width:100%">删除订单</button>
+        </form>
+      <?php endif; ?>
     </div>
   </div>
 </div>
