@@ -1,4 +1,4 @@
-<div class="container">
+<div class="container section">
   <h2>公告</h2>
   <div class="card">
     <?php if (!$list): ?>

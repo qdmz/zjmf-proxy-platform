@@ -194,13 +194,14 @@ function paginate(int $total, int $page, int $per, string $baseUrl): string {
 /* ================= v1.1 新增：邮件 / 优惠券 / 客服 ================= */
 
 /** 创建邮件令牌并返回 token */
-function email_token_create(int $userId, string $type, int $ttlSeconds = 3600): string
+function email_token_create(int $userId, string $type, int $ttlSeconds = 3600, string $data = ''): string
 {
     $token = bin2hex(random_bytes(32));
     DB::insert('email_tokens', [
         'user_id' => $userId,
         'type' => $type,
         'token' => $token,
+        'data' => $data === '' ? null : $data,
         'expires_at' => date('Y-m-d H:i:s', time() + $ttlSeconds),
     ]);
     return $token;
@@ -253,6 +254,19 @@ function send_reset_mail(array $user): array
         . "<p><a href=\"{$link}\">{$link}</a></p>"
         . "<p>若非本人操作，请忽略此邮件，账号不会受到影响。</p>";
     return \App\Core\Mailer::quick($user['email'], "【{$site}】密码重置", $html);
+}
+
+/** 发送换绑邮箱确认邮件（发往新邮箱，点击后才生效） */
+function send_change_email_mail(array $user, string $newEmail): array
+{
+    $token = email_token_create((int)$user['id'], 'change_email', 86400, $newEmail);
+    $link = site_base_url() . '/verify-email?token=' . $token;
+    $site = setting('site_name', '本站');
+    $html = "<p>您好，{$user['username']}：</p>"
+        . "<p>您在 {$site} 申请将登录邮箱更换为本邮箱，请点击以下链接确认（24 小时内有效）：</p>"
+        . "<p><a href=\"{$link}\">{$link}</a></p>"
+        . "<p>若非本人操作，请忽略此邮件，原邮箱不会受到影响。</p>";
+    return \App\Core\Mailer::quick($newEmail, "【{$site}】确认更换邮箱", $html);
 }
 
 /**

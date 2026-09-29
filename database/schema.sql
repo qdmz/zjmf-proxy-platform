@@ -293,8 +293,9 @@ ON DUPLICATE KEY UPDATE `v`=VALUES(`v`);
 CREATE TABLE IF NOT EXISTS `email_tokens` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` INT UNSIGNED NOT NULL,
-  `type` VARCHAR(20) NOT NULL COMMENT 'activate=激活, reset=重置密码',
+  `type` VARCHAR(20) NOT NULL COMMENT 'activate=激活, reset=重置密码, change_email=换绑邮箱',
   `token` VARCHAR(64) NOT NULL,
+  `data` VARCHAR(255) NULL DEFAULT NULL COMMENT '附加数据(如换绑新邮箱)',
   `expires_at` DATETIME NOT NULL,
   `used_at` DATETIME NULL DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

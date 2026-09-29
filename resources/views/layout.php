@@ -24,6 +24,7 @@
         <a href="/recharge" class="balance">余额 <?= e($user['balance'] ?? '0.00') ?></a>
         <a href="/messages" class="msg">消息<?= (($user['unread'] ?? 0) > 0) ? '(' . ($user['unread']) . ')' : '' ?></a>
         <span class="username"><?= e($user['username']) ?></span>
+        <a href="/console/profile">个人资料</a>
         <a href="/logout">退出</a>
       <?php else: ?>
         <a href="/login">登录</a>

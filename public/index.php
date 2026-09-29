@@ -50,6 +50,12 @@ $router->get('/console/host/{id}/os', 'ConsoleController@reinstallOs');
 $router->post('/console/host/{id}/renew', 'ConsoleController@renew');
 $router->post('/console/host/{id}/cancel', 'ConsoleController@cancel');
 $router->get('/messages', 'ConsoleController@messages');
+// ---------------- 个人资料 ----------------
+$router->get('/console/profile', 'ProfileController@index');
+$router->post('/console/profile', 'ProfileController@update');
+$router->get('/console/password', 'ProfileController@password');
+$router->post('/console/password', 'ProfileController@updatePassword');
+$router->get('/verify-email', 'ProfileController@verifyEmail');
 
 // ---------------- 工单 ----------------
 $router->get('/tickets', 'TicketController@index');

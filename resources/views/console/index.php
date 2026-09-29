@@ -1,5 +1,10 @@
 <div class="container section">
   <h2>控制台</h2>
+  <div style="margin-bottom:12px">
+    <a href="/console/profile" class="btn btn-sm">个人资料</a>
+    <a href="/console/password" class="btn btn-sm">修改密码</a>
+    <a href="/messages" class="btn btn-sm">站内消息</a>
+  </div>
   <div class="stat-grid">
     <div class="stat"><div class="num"><?= count($hosts) ?></div><div class="label">我的服务器</div></div>
     <div class="stat"><div class="num"><?= e(money((float)$user['balance'])) ?></div><div class="label">账户余额</div></div>
