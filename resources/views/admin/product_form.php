@@ -33,6 +33,10 @@
         <input class="form-control" name="sort" type="number" value="<?= (int)$product['sort'] ?>">
       </div>
       <div class="form-group">
+        <label>分组</label>
+        <input class="form-control" name="group_name" maxlength="50" value="<?= e($product['group_name'] ?? '') ?>" placeholder="如 香港云 / 美国特惠（留空=未分组）">
+      </div>
+      <div class="form-group">
         <label><input type="checkbox" name="reapply_markup" value="1"> 按新加价策略重新计算所有售价（覆盖手动调价）</label>
       </div>
       <button class="btn btn-primary" type="submit">保存</button>

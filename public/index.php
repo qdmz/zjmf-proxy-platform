@@ -88,6 +88,7 @@ $router->post('/admin/upstream/{id}/sync', 'Admin\UpstreamController@sync');
 $router->get('/admin/upstream/logs', 'Admin\UpstreamController@logs');
 
 $router->get('/admin/products', 'Admin\ProductController@index');
+$router->post('/admin/products/batch', 'Admin\ProductController@batch');
 $router->get('/admin/products/{id}/edit', 'Admin\ProductController@edit');
 $router->post('/admin/products/{id}/update', 'Admin\ProductController@update');
 $router->post('/admin/products/{id}/toggle', 'Admin\ProductController@toggle');

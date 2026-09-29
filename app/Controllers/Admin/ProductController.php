@@ -12,11 +12,13 @@ class ProductController extends Controller
         $admin = $this->requireAdmin();
         $providerId = (int)($_GET['provider_id'] ?? 0);
         $status = $_GET['status'] ?? '';
+        $group = trim($_GET['group'] ?? '');
         $kw = trim($_GET['kw'] ?? '');
         $where = '1=1';
         $params = [];
         if ($providerId > 0) { $where .= ' AND p.provider_id = ?'; $params[] = $providerId; }
         if ($status !== '') { $where .= ' AND p.status = ?'; $params[] = (int)$status; }
+        if ($group !== '') { $where .= ' AND p.group_name = ?'; $params[] = $group; }
         if ($kw !== '') { $where .= ' AND p.name LIKE ?'; $params[] = '%' . $kw . '%'; }
 
         $page = $this->page();
@@ -30,10 +32,12 @@ class ProductController extends Controller
             array_merge($params, [$per, ($page - 1) * $per])
         );
         $providers = DB::all("SELECT `id`,`name` FROM `upstream_providers` ORDER BY `id`");
+        $groups = array_column(DB::all("SELECT DISTINCT `group_name` FROM `products` WHERE `group_name` <> '' ORDER BY `group_name`"), 'group_name');
+        $q = array_filter(['provider_id' => $providerId, 'status' => $status, 'group' => $group, 'kw' => $kw], fn($v) => $v !== '' && $v !== 0);
         return $this->view('admin/product_index', [
-            'title' => '产品管理', 'products' => $products, 'providers' => $providers,
-            'filter' => ['provider_id' => $providerId, 'status' => $status, 'kw' => $kw],
-            'pagination' => paginate($total, $page, $per, '/admin/products?' . http_build_query(array_filter(['provider_id' => $providerId, 'status' => $status, 'kw' => $kw], fn($v) => $v !== '' && $v !== 0))),
+            'title' => '产品管理', 'products' => $products, 'providers' => $providers, 'groups' => $groups,
+            'filter' => ['provider_id' => $providerId, 'status' => $status, 'group' => $group, 'kw' => $kw],
+            'pagination' => paginate($total, $page, $per, '/admin/products?' . http_build_query($q)),
             'user' => $admin,
         ], 'layout_admin');
     }
@@ -65,6 +69,7 @@ class ProductController extends Controller
             'description' => trim($_POST['description'] ?? ''),
             'status' => (int)($_POST['status'] ?? 0),
             'sort' => (int)($_POST['sort'] ?? 0),
+            'group_name' => mb_substr(trim($_POST['group_name'] ?? ''), 0, 50),
             'stock_control' => (int)($_POST['stock_control'] ?? 0),
             'stock_qty' => (int)($_POST['stock_qty'] ?? 0),
             'markup_type' => in_array($_POST['markup_type'] ?? '', ['percent', 'fixed'], true) ? $_POST['markup_type'] : 'percent',
@@ -101,6 +106,34 @@ class ProductController extends Controller
             $new = (int)$product['status'] ? 0 : 1;
             DB::update('products', ['status' => $new], '`id` = :id', ['id' => (int)$id]);
             $this->adminLog(($new ? '上架' : '下架') . "产品 #{$id}");
+        }
+        redirect('/admin/products');
+    }
+
+    /** 批量操作：上架 / 下架 / 设置分组 */
+    public function batch(): void
+    {
+        $this->requireAdmin();
+        csrf_check();
+        $ids = array_values(array_unique(array_filter(array_map('intval', (array)($_POST['ids'] ?? [])))));
+        $action = $_POST['batch_action'] ?? '';
+        if (!$ids) {
+            flash('error', '请先勾选要操作的产品');
+            redirect('/admin/products');
+        }
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        if ($action === 'on' || $action === 'off') {
+            $st = $action === 'on' ? 1 : 0;
+            DB::query("UPDATE `products` SET `status` = ? WHERE `id` IN ({$ph})", array_merge([$st], $ids));
+            $this->adminLog('批量' . ($st ? '上架' : '下架') . '产品 ' . count($ids) . ' 个');
+            flash('success', '已批量' . ($st ? '上架 ' : '下架 ') . count($ids) . ' 个产品');
+        } elseif ($action === 'group') {
+            $g = mb_substr(trim($_POST['group_name'] ?? ''), 0, 50);
+            DB::query("UPDATE `products` SET `group_name` = ? WHERE `id` IN ({$ph})", array_merge([$g], $ids));
+            $this->adminLog('批量设置产品分组为「' . $g . '」' . count($ids) . ' 个');
+            flash('success', '已批量设置分组' . ($g !== '' ? '「' . $g . '」' : '（清空）'));
+        } else {
+            flash('error', '未知的批量操作');
         }
         redirect('/admin/products');
     }

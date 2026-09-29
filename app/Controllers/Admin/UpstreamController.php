@@ -49,6 +49,7 @@ class UpstreamController extends Controller
             'base_url' => rtrim(trim($_POST['base_url'] ?? ''), '/'),
             'account' => trim($_POST['account'] ?? ''),
             'status' => (int)($_POST['status'] ?? 1),
+            'checkout_payment' => trim($_POST['checkout_payment'] ?? '') !== '' ? trim($_POST['checkout_payment']) : 'credit',
             'remark' => trim($_POST['remark'] ?? ''),
         ];
         $password = $_POST['password'] ?? '';

@@ -19,6 +19,11 @@
       <input class="form-control" type="password" name="password" <?= $provider ? '' : 'required' ?>>
     </div>
     <div class="form-group">
+      <label>上游结算支付方式</label>
+      <input class="form-control" name="checkout_payment" value="<?= e($provider['checkout_payment'] ?? 'credit') ?>" placeholder="credit">
+      <small style="color:var(--muted)">购物车结算时传给上游的 payment 参数；若上游报 Wrong payment method，请换成上游支持的支付网关标识</small>
+    </div>
+    <div class="form-group">
       <label>状态</label>
       <select class="form-control" name="status">
         <option value="1" <?= ($provider['status'] ?? 1) == 1 ? 'selected' : '' ?>>启用</option>
