@@ -47,6 +47,14 @@ function clean_product_html($html): string {
     return strip_tags($html, '<br><p><li><ul><ol><span><div><b><strong><i><em><u><font><table><tr><td><th><tbody><thead><h1><h2><h3><h4><h5><img><a><blockquote><hr>');
 }
 
+/** 产品描述纯文本摘要：先解码 HTML 实体再去标签（库中多为转义存储，直接 strip_tags 剥不掉） */
+function product_text_summary($html, int $len = 80): string {
+    $text = html_entity_decode((string)($html ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = strip_tags($text);
+    $text = trim(preg_replace('/\s+/u', ' ', $text));
+    return mb_substr($text, 0, $len, 'UTF-8');
+}
+
 function url(string $path = ''): string {
     return $path === '' || $path[0] === '/' ? $path : '/' . $path;
 }
