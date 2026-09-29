@@ -23,11 +23,16 @@ class ShopController extends Controller
     public function index(): string
     {
         $type = $_GET['type'] ?? '';
+        $group = trim($_GET['group'] ?? '');
         $where = "p.`status` = 1";
         $params = [];
         if ($type !== '') {
             $where .= " AND p.`type` = ?";
             $params[] = $type;
+        }
+        if ($group !== '') {
+            $where .= " AND p.`group_name` = ?";
+            $params[] = $group;
         }
         $products = DB::all(
             "SELECT p.*,
@@ -36,10 +41,16 @@ class ShopController extends Controller
              ORDER BY p.`sort` DESC, p.`id` DESC",
             $params
         );
+        $groups = array_column(
+            DB::all("SELECT DISTINCT `group_name` FROM `products` WHERE `status` = 1 AND `group_name` != '' ORDER BY `group_name`"),
+            'group_name'
+        );
         return $this->view('shop/index', [
             'title' => '产品选购',
             'products' => $products,
             'type' => $type,
+            'group' => $group,
+            'groups' => $groups,
             'user' => Auth::user(),
         ]);
     }

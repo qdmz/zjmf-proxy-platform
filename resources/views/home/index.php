@@ -27,7 +27,7 @@
         <?php foreach ($products as $p): ?>
           <?php $st = stock_status($p); ?>
           <div class="card">
-            <h3><?= e($p['name']) ?> <span class="badge <?= $st['badge'] ?>"><?= e($st['label']) ?></span></h3>
+            <h3><?= e($p['name']) ?> <span class="badge <?= $st['badge'] ?>"><?= e($st['label']) ?></span><?php if (!empty($p['group_name'])): ?> <span class="badge badge-replied"><?= e($p['group_name']) ?></span><?php endif; ?></h3>
             <div class="meta"><?= e(product_text_summary($p['description'] ?? '', 60)) ?></div>
             <div class="price">
               <?php if ($p['min_price'] !== null): ?>
