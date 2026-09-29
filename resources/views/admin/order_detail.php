@@ -25,6 +25,12 @@
           <button class="btn btn-sm" type="submit">标记人工处理</button>
         </form>
       <?php endif; ?>
+      <?php if (in_array($order['status'], ['paid', 'failed'], true)): ?>
+        <form method="post" action="/admin/orders/<?= (int)$order['id'] ?>/refund" onsubmit="return confirm('确认将该订单退款到用户余额吗？')">
+          <?= csrf_field() ?>
+          <button class="btn btn-sm" type="submit" style="background:#fee2e2;color:#991b1b">退款到余额</button>
+        </form>
+      <?php endif; ?>
     </div>
   </div>
   <div class="card">

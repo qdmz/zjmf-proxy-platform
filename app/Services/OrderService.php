@@ -313,6 +313,25 @@ class OrderService
     /**
      * 开通/续费失败时，将已支付账单退回用户余额（幂等：仅处理 status=paid 的账单）
      */
+    /** 管理员手动退款（账单已支付时退回余额） */
+    public static function adminRefund(int $orderId): array
+    {
+        $order = DB::get("SELECT * FROM `orders` WHERE `id` = ? LIMIT 1", [$orderId]);
+        if (!$order) {
+            return ['ok' => false, 'msg' => '订单不存在'];
+        }
+        $ok = self::refundBillForOrder($orderId, '管理员手动退款');
+        if (!$ok) {
+            return ['ok' => false, 'msg' => '退款失败：账单不是已支付状态或已退款'];
+        }
+        // 同步标记订单为失败（若还在待开通）
+        if (in_array($order['status'], ['paid', 'pending'], true)) {
+            DB::update('orders', ['status' => 'failed', 'fail_reason' => '管理员手动退款'], '`id` = :id', ['id' => $orderId]);
+        }
+        Logger::log("admin refund order #{$orderId}");
+        return ['ok' => true, 'msg' => '已退款到用户余额'];
+    }
+
     protected static function refundBillForOrder(int $orderId, string $reason): bool
     {
         $bill = DB::get(

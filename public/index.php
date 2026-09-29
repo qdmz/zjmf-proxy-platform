@@ -98,6 +98,7 @@ $router->get('/admin/orders', 'Admin\OrderAdminController@index');
 $router->get('/admin/orders/{id}', 'Admin\OrderAdminController@detail');
 $router->post('/admin/orders/{id}/retry', 'Admin\OrderAdminController@retry');
 $router->post('/admin/orders/{id}/markfailed', 'Admin\OrderAdminController@markFailed');
+$router->post('/admin/orders/{id}/refund', 'Admin\OrderAdminController@refund');
 
 $router->get('/admin/hosts', 'Admin\HostAdminController@index');
 $router->get('/admin/hosts/{id}', 'Admin\HostAdminController@detail');

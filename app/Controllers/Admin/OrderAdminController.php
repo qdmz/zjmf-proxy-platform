@@ -80,4 +80,13 @@ class OrderAdminController extends Controller
         $this->adminLog("标记订单 #{$id} 为人工处理");
         redirect('/admin/orders/' . (int)$id);
     }
+
+    public function refund(string $id): void
+    {
+        $this->requireAdmin();
+        csrf_check();
+        $ret = \App\Services\OrderService::adminRefund((int)$id);
+        $this->adminLog("订单 #{$id} 手动退款：" . $ret['msg']);
+        redirect('/admin/orders/' . (int)$id);
+    }
 }
