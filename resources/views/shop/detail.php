@@ -2,7 +2,7 @@
   <div class="detail-grid">
     <div class="card">
       <h2 style="margin-bottom:8px"><?= e($product['name']) ?></h2>
-      <div style="color:var(--muted);font-size:14px;margin-bottom:16px"><?= e($product['description']) ?></div>
+      <div style="color:var(--muted);font-size:14px;margin-bottom:16px"><?= clean_product_html($product['description']) ?></div>
 
       <div class="opt-group">
         <div class="opt-title">付费周期</div>

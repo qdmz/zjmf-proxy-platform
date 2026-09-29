@@ -233,7 +233,7 @@ class UpstreamService
             'upstream_pid' => $pid,
             'type' => $p['type'] ?? 'cloud',
             'name' => $p['name'] ?? ('产品' . $pid),
-            'description' => $p['description'] ?? '',
+            'description' => clean_product_html($p['description'] ?? ''),
             'billingcycles' => json_encode(array_values(array_unique($cycles)), JSON_UNESCAPED_UNICODE),
             'stock_control' => (int)($p['stock_control'] ?? 0),
             'stock_qty' => (int)($p['qty'] ?? 0),
