@@ -104,6 +104,10 @@ class AuthController extends Controller
     public function doRegister(): void
     {
         csrf_check();
+        if (!\App\Core\Captcha::check(trim($_POST['captcha'] ?? ''))) {
+            flash('error', '验证码错误，请重新输入');
+            redirect('/register');
+        }
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         $email = trim($_POST['email'] ?? '');
@@ -184,6 +188,10 @@ class AuthController extends Controller
     public function doForgot(): void
     {
         csrf_check();
+        if (!\App\Core\Captcha::check(trim($_POST['captcha'] ?? ''))) {
+            flash('error', '验证码错误，请重新输入');
+            redirect('/forgot');
+        }
         $email = trim($_POST['email'] ?? '');
         $done = function () {
             flash('success', '如果该邮箱已注册，密码重置邮件已发送，请查收（1 小时内有效）');

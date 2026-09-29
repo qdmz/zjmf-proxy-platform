@@ -9,6 +9,13 @@
           <label>注册邮箱</label>
           <input class="form-control" type="email" name="email" required>
         </div>
+        <div class="form-group">
+          <label>验证码</label>
+          <div style="display:flex;gap:8px">
+            <input class="form-control" name="captcha" required maxlength="8" style="flex:1" autocomplete="off" placeholder="输入右侧字符">
+            <img src="/captcha" alt="验证码" title="点击刷新" style="height:38px;cursor:pointer;border:1px solid #ddd;border-radius:4px" onclick="this.src='/captcha?'+Date.now()">
+          </div>
+        </div>
         <button class="btn btn-primary" style="width:100%" type="submit">发送重置邮件</button>
         <p style="margin-top:16px;text-align:center;font-size:14px"><a href="/login">返回登录</a></p>
       </form>

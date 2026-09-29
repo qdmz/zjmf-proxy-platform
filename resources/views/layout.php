@@ -92,12 +92,12 @@
     addMsg(text,'user');
     fetch('/chat/send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN':csrf},
       body:'_csrf='+encodeURIComponent(csrf)+'&message='+encodeURIComponent(text)})
-      .then(function(r){return r.json();})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
       .then(function(j){
         if(j.code===0){addMsg(j.data.reply,'bot');}
         else{addMsg(j.message||'发送失败','bot');}
       })
-      .catch(function(){addMsg('网络异常，请稍后重试','bot');});
+      .catch(function(e){addMsg('网络异常('+(e.message||'未知错误')+')，请稍后重试','bot');});
   }
   document.getElementById('chatSend').onclick=send;
   input.addEventListener('keydown',function(e){if(e.key==='Enter')send();});
@@ -105,13 +105,13 @@
     if(!confirm('确定转接人工客服吗？当前会话将生成工单。'))return;
     fetch('/chat/transfer',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN':csrf},
       body:'_csrf='+encodeURIComponent(csrf)})
-      .then(function(r){return r.json();})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
       .then(function(j){
         if(j.code===0){addMsg(j.message+' 可在「工单」中查看回复。','bot');}
         else if(j.data&&j.data.login){addMsg('转人工需要先登录，','bot');setTimeout(function(){location.href='/login?next='+encodeURIComponent(location.pathname);},800);}
         else{addMsg(j.message||'转接失败','bot');}
       })
-      .catch(function(){addMsg('网络异常，请稍后重试','bot');});
+      .catch(function(e){addMsg('网络异常('+(e.message||'未知错误')+')，请稍后重试','bot');});
   };
 })();
 </script>

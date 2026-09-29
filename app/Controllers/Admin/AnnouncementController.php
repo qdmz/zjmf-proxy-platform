@@ -42,13 +42,14 @@ class AnnouncementController extends Controller
             flash('error', '标题和内容不能为空');
             redirect('/admin/announcements/create');
         }
-        DB::insert('announcements', [
+        $id = DB::insert('announcements', [
             'title' => $title,
             'content' => $content,
             'is_pinned' => isset($_POST['is_pinned']) ? 1 : 0,
             'status' => isset($_POST['status']) ? 1 : 0,
-            'published_at' => date('Y-m-d H:i:s'),
         ]);
+        // 用数据库时钟写入发布时间，避免 PHP 与 MySQL 时区不一致导致前台延迟显示
+        DB::query("UPDATE `announcements` SET `published_at` = NOW() WHERE `id` = ?", [(int)$id]);
         $this->adminLog("发布公告：{$title}");
         flash('success', '公告已发布');
         redirect('/admin/announcements');
