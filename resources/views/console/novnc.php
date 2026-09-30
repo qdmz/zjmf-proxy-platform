@@ -17,6 +17,10 @@ const screenEl = document.getElementById('vncScreen');
 if (!wsUrl) {
   statusEl.textContent = '缺少 VNC 连接地址';
   statusEl.className = 'alert alert-error';
+} else if (/[?&]token=(&|$)/.test(wsUrl)) {
+  // 上游未返回 VNC 令牌：WebSocket 必被拒绝，直接给出明确提示
+  statusEl.textContent = '上游 VNC 服务未返回访问令牌（token 为空），无法建立连接。可能原因：云主机未真正运行、上游 VNC 服务异常。请先尝试重启主机后重试，或联系客服。';
+  statusEl.className = 'alert alert-error';
 } else {
   try {
     const rfb = new RFB(screenEl, wsUrl, { credentials: { password } });
