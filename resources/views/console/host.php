@@ -49,6 +49,10 @@
           <label>选择系统</label>
           <select class="form-control" id="osSelect"><option>加载中...</option></select>
         </div>
+        <div class="form-group">
+          <label>新密码（留空则随机生成）</label>
+          <input type="text" class="form-control" id="reinstallPassword" placeholder="重装后的 root 密码，可留空">
+        </div>
         <div class="notice">重装将清空所有数据，请确认已备份！</div>
         <button class="btn btn-danger btn-sm" id="btnDoReinstall">确认重装</button>
       </div>
@@ -240,7 +244,8 @@ document.getElementById('btnDoRepassword').addEventListener('click', function ()
 document.getElementById('btnDoReinstall').addEventListener('click', function () {
   if (!confirm('重装将清空所有数据，确定继续吗？')) return;
   var osId = document.getElementById('osSelect').value;
-  post('/console/host/' + hostId + '/action', { func: 'reinstall', os_id: osId }, function (j) {
+  var pwd = document.getElementById('reinstallPassword').value;
+  post('/console/host/' + hostId + '/action', { func: 'reinstall', os_id: osId, password: pwd }, function (j) {
     showMsg(j.message || (j.code === 0 ? '重装指令已发送' : '失败'), j.code === 0);
   });
 });

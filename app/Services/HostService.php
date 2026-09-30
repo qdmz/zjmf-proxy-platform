@@ -158,6 +158,9 @@ class HostService
         if ($func === 'repassword' && !empty($params['password'])) {
             DB::update('hosts', ['password_enc' => enc_data($params['password'])], '`id` = :id', ['id' => $hostId]);
         }
+        if ($func === 'reinstall' && !empty($params['password'])) {
+            DB::update('hosts', ['password_enc' => enc_data($params['password'])], '`id` = :id', ['id' => $hostId]);
+        }
         // 电源类操作后刷新状态
         if (in_array($func, ['on', 'off', 'reboot', 'hard_off', 'hard_reboot'], true)) {
             // 延迟状态以 query 为准，这里仅记录
