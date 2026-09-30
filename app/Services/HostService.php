@@ -191,6 +191,12 @@ class HostService
         if (empty($parts['host'])) {
             return $url;
         }
+        // 上游返回的是完整的 novnc 页面地址（含 host_token 等鉴权参数）时，
+        // 直接使用上游原地址，不改写——上游页面自己会处理鉴权流程
+        $query = $parts['query'] ?? '';
+        if (strpos($query, 'host_token=') !== false) {
+            return $url;
+        }
         // 如果已经是本站域名，直接返回
         $siteHost = $_SERVER['HTTP_HOST'] ?? '';
         if ($parts['host'] === $siteHost) {
