@@ -95,6 +95,7 @@ $router->post('/admin/upstream/{id}/delete', 'Admin\UpstreamController@delete');
 $router->post('/admin/upstream/{id}/test', 'Admin\UpstreamController@test');
 $router->post('/admin/upstream/{id}/sync', 'Admin\UpstreamController@sync');
 $router->get('/admin/upstream/logs', 'Admin\UpstreamController@logs');
+$router->get('/admin/upstream/logs/{id}', 'Admin\UpstreamController@logDetail');
 
 $router->get('/admin/products', 'Admin\ProductController@index');
 $router->post('/admin/products/batch', 'Admin\ProductController@batch');

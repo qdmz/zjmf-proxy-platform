@@ -133,4 +133,22 @@ class UpstreamController extends Controller
             'user' => $admin,
         ], 'layout_admin');
     }
+
+    public function logDetail(string $id): string
+    {
+        $admin = $this->requireAdmin();
+        $log = DB::get(
+            "SELECT l.*, up.name AS provider_name FROM `upstream_logs` l
+             LEFT JOIN `upstream_providers` up ON up.id = l.provider_id
+             WHERE l.`id` = ?",
+            [(int)$id]
+        );
+        if (!$log) {
+            $this->fail('日志不存在');
+        }
+        return $this->view('admin/upstream_log_detail', [
+            'title' => '上游接口日志详情 #' . $id, 'log' => $log,
+            'user' => $admin,
+        ], 'layout_admin');
+    }
 }

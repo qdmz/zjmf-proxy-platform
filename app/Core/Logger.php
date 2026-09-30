@@ -20,8 +20,8 @@ class Logger
                 'provider_id' => $providerId,
                 'host_id' => $hostId,
                 'action' => $action,
-                'request' => is_string($request) ? mb_substr($request, 0, 2000) : mb_substr(json_encode($request, JSON_UNESCAPED_UNICODE), 0, 2000),
-                'response' => is_string($response) ? mb_substr($response, 0, 2000) : mb_substr(json_encode($response, JSON_UNESCAPED_UNICODE), 0, 2000),
+                'request' => is_string($request) ? mb_substr($request, 0, 20000) : mb_substr(json_encode($request, JSON_UNESCAPED_UNICODE), 0, 20000),
+                'response' => is_string($response) ? mb_substr($response, 0, 20000) : mb_substr(json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), 0, 20000),
                 'success' => $success ? 1 : 0,
             ]);
         } catch (\Throwable $e) {

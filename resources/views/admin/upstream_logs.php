@@ -3,7 +3,7 @@
   <tbody>
     <?php foreach ($logs as $l): ?>
       <tr>
-        <td><?= (int)$l['id'] ?></td>
+        <td><a href="/admin/upstream/logs/<?= (int)$l['id'] ?>"><?= (int)$l['id'] ?></a></td>
         <td><?= e($l['provider_name'] ?? '') ?></td>
         <td><?= e($l['action']) ?></td>
         <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="<?= e($l['request'] ?? '') ?>"><?= e(mb_substr($l['request'] ?? '', 0, 80)) ?></td>
