@@ -25,7 +25,15 @@
           <h3><?= e($p['name']) ?> <span class="badge <?= $st['badge'] ?>"><?= e($st['label']) ?></span><?php if (!empty($p['group_name'])): ?> <span class="badge badge-replied"><?= e($p['group_name']) ?></span><?php endif; ?></h3>
           <div class="meta"><?= e(product_text_summary($p['description'] ?? '', 80)) ?></div>
           <div class="price">
-            <?php if ($p['min_price'] !== null): ?><?= e(money((float)$p['min_price'])) ?><small>/月起</small><?php else: ?><small>询价</small><?php endif; ?>
+            <?php
+            $showPrice = $p['monthly_price'] ?? null;
+            $showCycle = '月';
+            if ($showPrice === null && $p['min_price'] !== null) {
+                $showPrice = $p['min_price'];
+                $showCycle = str_replace(['付'], '', cycle_name($p['min_cycle'] ?? ''));
+            }
+            ?>
+            <?php if ($showPrice !== null): ?><?= e(money((float)$showPrice)) ?><small>/<?= e($showCycle) ?>起</small><?php else: ?><small>询价</small><?php endif; ?>
           </div>
           <div style="margin-top:12px"><a href="/shop/<?= (int)$p['id'] ?>" class="btn btn-primary btn-sm">购买</a></div>
         </div>

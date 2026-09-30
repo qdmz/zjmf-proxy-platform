@@ -11,7 +11,7 @@ class HomeController extends Controller
     {
         $products = DB::all(
             "SELECT p.*, pp.price, pp.billingcycle,
-                    (SELECT MIN(price) FROM `product_prices` WHERE `product_id` = p.id) AS min_price
+                    (SELECT MIN(price) FROM `product_prices` WHERE `product_id` = p.id) AS min_price, (SELECT price FROM `product_prices` WHERE `product_id` = p.id AND `billingcycle` = 'monthly' LIMIT 1) AS monthly_price, (SELECT billingcycle FROM `product_prices` WHERE `product_id` = p.id ORDER BY price ASC LIMIT 1) AS min_cycle
              FROM `products` p
              LEFT JOIN `product_prices` pp ON pp.product_id = p.id AND pp.billingcycle = 'monthly'
              WHERE p.`status` = 1

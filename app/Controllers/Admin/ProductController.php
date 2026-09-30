@@ -26,7 +26,7 @@ class ProductController extends Controller
         $total = DB::count("SELECT COUNT(*) FROM `products` p WHERE {$where}", $params);
         $products = DB::all(
             "SELECT p.*, up.name AS provider_name,
-                    (SELECT MIN(price) FROM `product_prices` WHERE `product_id` = p.id) AS min_price
+                    (SELECT MIN(price) FROM `product_prices` WHERE `product_id` = p.id) AS min_price, (SELECT price FROM `product_prices` WHERE `product_id` = p.id AND `billingcycle` = 'monthly' LIMIT 1) AS monthly_price, (SELECT billingcycle FROM `product_prices` WHERE `product_id` = p.id ORDER BY price ASC LIMIT 1) AS min_cycle
              FROM `products` p LEFT JOIN `upstream_providers` up ON up.id = p.provider_id
              WHERE {$where} ORDER BY p.`sort` DESC, p.`id` DESC LIMIT ? OFFSET ?",
             array_merge($params, [$per, ($page - 1) * $per])
