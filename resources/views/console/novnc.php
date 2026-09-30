@@ -10,10 +10,15 @@
 <script type="module">
 import RFB from 'https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.js';
 const params = new URLSearchParams(location.search);
-const wsUrl = params.get('url') ? atob(params.get('url')) : '';
+let wsUrl = params.get('url') ? atob(params.get('url')) : '';
 const password = params.get('password') || '';
+const hostToken = params.get('host_token') || '';
 const statusEl = document.getElementById('vncStatus');
 const screenEl = document.getElementById('vncScreen');
+// 上游把真正的 token 放在 host_token 参数里，拼到 WebSocket 地址上
+if (hostToken && /[?&]token=(&|$)/.test(wsUrl)) {
+  wsUrl = wsUrl.replace(/([?&]token=)(&|$)/, '$1' + encodeURIComponent(hostToken) + '$2');
+}
 if (!wsUrl) {
   statusEl.textContent = '缺少 VNC 连接地址';
   statusEl.className = 'alert alert-error';

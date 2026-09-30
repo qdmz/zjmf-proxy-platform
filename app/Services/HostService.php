@@ -172,8 +172,9 @@ class HostService
         // VNC URL 处理：上游可能返回它自己的域名，改写为本站域名以使用我们的 novnc 代理页
         if ($func === 'vnc' && is_array($data) && !empty($data['url'])) {
             $data['url'] = self::rewriteVncUrl((string)$data['url']);
-            // 检查 token 是否为空（上游 VNC 服务异常时 token 为空）
-            if (preg_match('/token=(&|$)/', $data['url'])) {
+            // 检查 token 是否为空：真正的 token 可能在 host_token 参数里
+            $hasHostToken = (bool)preg_match('/[?&]host_token=[^&]+/', $data['url']);
+            if (!$hasHostToken && preg_match('/token=(&|$)/', $data['url'])) {
                 Logger::upstream((int)$provider['id'], $hostId, 'module_vnc_empty_token', [], $resp, false);
             }
         }
