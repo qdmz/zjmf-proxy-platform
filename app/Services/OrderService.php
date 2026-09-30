@@ -415,6 +415,8 @@ class OrderService
             return ['ok' => false, 'msg' => '该产品不支持所选续费周期'];
         }
         $amount = (float)$price['sale_price'] > 0 ? (float)$price['sale_price'] : (float)$price['price'];
+        $couponId = 0;
+        $discountAmount = 0.0;
         DB::beginTransaction();
         try {
             $orderId = DB::insert('orders', [
