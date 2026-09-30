@@ -190,7 +190,8 @@ class ZjmfV1Client
     /** 实例能力按钮清单（决定前台展示哪些操作按钮） */
     public function getHostModule(int $hostId): array
     {
-        return $this->api('GET', '/v1/hosts/' . $hostId . '/module');
+        // 带 nat=1 返回完整结构（含 module_button、host_data、dcimcloud）
+        return $this->api('GET', '/v1/hosts/' . $hostId . '/module?nat=1');
     }
 
     /**

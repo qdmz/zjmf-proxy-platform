@@ -54,7 +54,8 @@
         <?= csrf_field() ?>
         <select class="form-control" name="billingcycle" style="max-width:220px">
           <?php foreach ($prices as $pr): ?>
-            <option value="<?= e($pr['billingcycle']) ?>"><?= e(cycle_name($pr['billingcycle'])) ?> - <?= e(money((float)$pr['sale_price'])) ?></option>
+            <?php $showPrice = (float)$pr['sale_price'] > 0 ? (float)$pr['sale_price'] : (float)$pr['price']; ?>
+            <option value="<?= e($pr['billingcycle']) ?>"><?= e(cycle_name($pr['billingcycle'])) ?> - <?= e(money($showPrice)) ?></option>
           <?php endforeach; ?>
         </select>
         <button class="btn btn-primary btn-sm" type="submit">生成续费账单</button>

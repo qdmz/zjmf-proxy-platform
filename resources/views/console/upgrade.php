@@ -1,4 +1,3 @@
-<?php $this->extend('layout/app'); ?>
 <div class="container" style="padding:32px 0">
   <p><a href="/console/host/<?= (int)$host['id'] ?>">← 返回实例</a></p>
   <h2 style="margin:12px 0 20px">升降级配置 <small class="muted"><?= e($host['domain']) ?></small></h2>

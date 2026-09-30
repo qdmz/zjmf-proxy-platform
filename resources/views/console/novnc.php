@@ -1,4 +1,3 @@
-<?php $this->extend('layout/app'); ?>
 <div style="padding:16px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <h3 style="margin:0">VNC 控制台</h3>

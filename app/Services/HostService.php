@@ -39,7 +39,14 @@ class HostService
         $resp = $client->getHost((int)$host['upstream_host_id']);
         if ((int)($resp['status'] ?? 0) !== 200) {
             Logger::upstream((int)$provider['id'], $hostId, 'sync_detail', [], $resp, false);
-            return ['ok' => false, 'msg' => '同步失败: ' . ($resp['msg'] ?? '未知错误')];
+            $detail = $resp['msg'] ?? '';
+            if ($detail === '' && isset($resp['status'])) {
+                $detail = '上游接口返回 status=' . $resp['status'];
+            }
+            if ($detail === '') {
+                $detail = '未知错误（上游无响应）';
+            }
+            return ['ok' => false, 'msg' => '同步失败: ' . $detail];
         }
         $h = $resp['data']['host'] ?? $resp['data'] ?? [];
         // assignedips 上游返回逗号分隔字符串，转为数组
@@ -170,9 +177,26 @@ class HostService
         $client = UpstreamService::client($provider);
         $resp = $client->getHostModule((int)$host['upstream_host_id']);
         if ((int)($resp['status'] ?? 0) !== 200) {
+            Logger::upstream((int)$provider['id'], $hostId, 'module_caps', [], $resp, false);
             return [];
         }
-        return $resp['data']['module'] ?? [];
+        $data = $resp['data'] ?? [];
+        // 格式1：带 nat=1 的完整结构，按钮在 module_button.control/console
+        if (isset($data['module_button'])) {
+            $buttons = [];
+            foreach (['control', 'console'] as $group) {
+                foreach ((array)($data['module_button'][$group] ?? []) as $btn) {
+                    // 上游按钮用 func 或 function 字段
+                    $func = $btn['func'] ?? $btn['function'] ?? null;
+                    if ($func) {
+                        $buttons[$func] = $btn;
+                    }
+                }
+            }
+            return ['button' => $buttons, '_raw' => $data];
+        }
+        // 格式2：默认扁平结构，$data['module'] 是功能数组
+        return $data['module'] ?? $data;
     }
 
     /** 获取上游模块完整信息（含自定义区域标签页、NAT信息等） */
