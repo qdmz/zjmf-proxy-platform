@@ -100,12 +100,12 @@ class HostService
                 } catch (\Throwable $e2) {
                     return ['ok' => false, 'msg' => '同步失败: 写库异常(' . $e2->getMessage() . ')，请先执行 database/upgrade_20260930_host_sync_cols.sql'];
                 }
-                Logger::upstream((int)$provider['id'], $hostId, 'sync_detail', [], ['ok' => true, 'note' => 'downgraded: missing cols'], true);
+                Logger::upstream((int)$provider['id'], $hostId, 'sync_detail', [], ['ok' => true, 'note' => 'downgraded: missing cols', 'host_data' => $h], true);
                 return ['ok' => true, 'msg' => '同步成功（部分字段需升级数据库后才能同步）'];
             }
             throw $e;
         }
-        Logger::upstream((int)$provider['id'], $hostId, 'sync_detail', [], ['ok' => true], true);
+        Logger::upstream((int)$provider['id'], $hostId, 'sync_detail', [], ['ok' => true, 'host_data' => $h], true);
         return ['ok' => true, 'msg' => '同步成功'];
     }
 
