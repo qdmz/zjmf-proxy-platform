@@ -97,6 +97,23 @@
       <div class="kv"><span>操作系统</span><span><?= e($host['os'] ?: '—') ?></span></div>
       <div class="kv"><span>端口</span><span><?= (int)$host['port'] > 0 ? (int)$host['port'] : '—' ?></span></div>
       <div class="kv"><span>带宽</span><span><?= e($host['bwlimit'] ?: '—') ?></span></div>
+      <?php
+      // 显示上游配置快照（CPU/内存/带宽/节点等）
+      $configSnapshot = [];
+      if (!empty($host['config_snapshot'])) {
+          $decoded = json_decode($host['config_snapshot'], true);
+          if (is_array($decoded)) $configSnapshot = $decoded;
+      }
+      // key -> 显示名映射
+      $configLabels = ['cpu' => 'CPU', 'memory' => '内存', 'bw' => '带宽', 'in_bw' => '流入带宽', 'node' => '节点', 'data_disk_size' => '数据盘', 'ip_num' => 'IP数量', 'os' => null]; // os 已在上面显示，跳过
+      foreach ($configSnapshot as $cfg):
+          $ckey = $cfg['key'] ?? '';
+          if (!isset($configLabels[$ckey]) || $configLabels[$ckey] === null) continue;
+          $cval = $cfg['value'] ?? '';
+          if ($cval === '' || $cval === null) continue;
+      ?>
+      <div class="kv"><span><?= e($configLabels[$ckey]) ?></span><span><?= e((string)$cval) ?></span></div>
+      <?php endforeach; ?>
       <div class="kv"><span>付费周期</span><span><?= e(cycle_name($host['billingcycle'])) ?></span></div>
       <div class="kv"><span>开通时间</span><span><?= e($host['regdate'] ?? '—') ?></span></div>
       <div class="kv"><span>到期时间</span><span><?= e($host['nextduedate'] ?? '—') ?></span></div>

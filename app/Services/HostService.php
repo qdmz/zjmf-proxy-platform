@@ -81,6 +81,8 @@ class HostService
             'nextduedate' => self::toDate($h['nextduedate'] ?? null),
             'initiative_renew' => (int)($h['initiative_renew'] ?? 0),
             'suspend_reason' => ($h['suspend_reason'] ?? '') . ($h['suspend_type'] ?? '' ? ' [' . $h['suspend_type'] . ']' : ''),
+            // 保存上游配置快照（CPU/内存/带宽/节点等）
+            'config_snapshot' => !empty($h['config_option']) ? json_encode($h['config_option'], JSON_UNESCAPED_UNICODE) : ($host['config_snapshot'] ?? null),
         ];
         if (!empty($h['password'])) {
             $update['password_enc'] = enc_data((string)$h['password']);
