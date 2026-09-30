@@ -28,6 +28,15 @@ class HostService
         'status' => '服务器电源状态',
     ];
 
+    /** 暂未实现的功能按钮，前端不显示 */
+    public static array $hiddenActions = [
+        'snapshot',
+        'security_groups',
+        'setting',
+        'nat_acl',
+        'module_chart',
+    ];
+
     public static function get(int $id)
     {
         return DB::get("SELECT * FROM `hosts` WHERE `id` = ? LIMIT 1", [$id]);
@@ -233,7 +242,7 @@ class HostService
                 foreach ((array)($data['module_button'][$group] ?? []) as $btn) {
                     // 上游按钮用 func 或 function 字段
                     $func = $btn['func'] ?? $btn['function'] ?? null;
-                    if ($func) {
+                    if ($func && !in_array($func, self::$hiddenActions, true)) {
                         $buttons[$func] = $btn;
                     }
                 }
@@ -245,7 +254,7 @@ class HostService
             $buttons = [];
             foreach ($data as $btn) {
                 $func = $btn['func'] ?? $btn['function'] ?? null;
-                if ($func) {
+                if ($func && !in_array($func, self::$hiddenActions, true)) {
                     $buttons[$func] = $btn;
                 }
             }
