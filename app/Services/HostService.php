@@ -35,6 +35,10 @@ class HostService
         'setting',
         'nat_acl',
         'module_chart',
+        'rescue_system',
+        'rescue',
+        'exitRescue',
+        'status',
     ];
 
     public static function get(int $id)
