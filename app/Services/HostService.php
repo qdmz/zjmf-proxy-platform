@@ -169,9 +169,11 @@ class HostService
             // 延迟状态以 query 为准，这里仅记录
         }
         $data = $resp['data'] ?? null;
-        // VNC URL 处理：上游可能返回它自己的域名，改写为本站域名以使用我们的 novnc 代理页
+        // VNC URL 处理：同时返回本站改写地址和上游原地址，让用户可切换尝试
         if ($func === 'vnc' && is_array($data) && !empty($data['url'])) {
-            $data['url'] = self::rewriteVncUrl((string)$data['url']);
+            $origUrl = (string)$data['url'];
+            $data['url_upstream'] = $origUrl;                    // 上游原地址
+            $data['url'] = self::rewriteVncUrl($origUrl);        // 本站改写地址（默认显示）
             // 检查 token 是否为空：真正的 token 可能在 host_token 参数里
             $hasHostToken = (bool)preg_match('/[?&]host_token=[^&]+/', $data['url']);
             if (!$hasHostToken && preg_match('/token=(&|$)/', $data['url'])) {
@@ -189,12 +191,6 @@ class HostService
     {
         $parts = parse_url($url);
         if (empty($parts['host'])) {
-            return $url;
-        }
-        // 上游返回的是完整的 novnc 页面地址（含 host_token 等鉴权参数）时，
-        // 直接使用上游原地址，不改写——上游页面自己会处理鉴权流程
-        $query = $parts['query'] ?? '';
-        if (strpos($query, 'host_token=') !== false) {
             return $url;
         }
         // 如果已经是本站域名，直接返回

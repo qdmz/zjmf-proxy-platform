@@ -59,7 +59,16 @@
 
       <div class="card" style="background:#f8fafc;margin-top:16px" id="vncBox" hidden>
         <h3>VNC 控制台</h3>
-        <a id="vncLink" href="#" target="_blank" class="btn btn-primary btn-sm">打开 VNC 控制台</a>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <a id="vncLink" href="#" target="_blank" class="btn btn-primary btn-sm">打开 VNC 控制台（本站）</a>
+          <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:4px">
+            <input type="checkbox" id="vncUpstreamToggle"> 显示上游原地址
+          </label>
+        </div>
+        <div id="vncUpstreamBox" hidden style="margin-top:8px">
+          <a id="vncUpstreamLink" href="#" target="_blank" class="btn btn-sm">打开 VNC（上游原地址）</a>
+          <div style="font-size:12px;color:#999;margin-top:4px">如果本站 VNC 连不上，可试上游原地址</div>
+        </div>
       </div>
 
       <h3 style="margin-top:24px">续费</h3>
@@ -232,6 +241,15 @@ document.querySelectorAll('.host-action').forEach(function (btn) {
         if (j.data && j.data.url) {
           document.getElementById('vncBox').hidden = false;
           document.getElementById('vncLink').href = j.data.url;
+          if (j.data.url_upstream && j.data.url_upstream !== j.data.url) {
+            document.getElementById('vncUpstreamLink').href = j.data.url_upstream;
+            document.getElementById('vncUpstreamToggle').closest('label').style.display = '';
+          } else {
+            document.getElementById('vncUpstreamToggle').closest('label').style.display = 'none';
+          }
+          // 重置开关状态
+          document.getElementById('vncUpstreamToggle').checked = false;
+          document.getElementById('vncUpstreamBox').hidden = true;
         }
       } else showMsg(j.message || '执行失败', false);
     });
@@ -262,5 +280,9 @@ document.getElementById('btnPower').addEventListener('click', function () {
   fetch('/console/host/' + hostId + '/power', { headers: { 'X-Requested-With': 'XMLHttpRequest' } }).then(function (r) { return r.json(); }).then(function (j) {
     showMsg(j.code === 0 ? '电源状态：' + JSON.stringify(j.data) : (j.message || '查询失败'), j.code === 0);
   });
+});
+// VNC 上游地址显示开关
+document.getElementById('vncUpstreamToggle').addEventListener('change', function () {
+  document.getElementById('vncUpstreamBox').hidden = !this.checked;
 });
 </script>
