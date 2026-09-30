@@ -77,7 +77,22 @@ class HostService
         foreach (['regdate', 'nextduedate'] as $k) {
             if ($update[$k] === null) unset($update[$k]);
         }
-        DB::update('hosts', $update, '`id` = :id', ['id' => $hostId]);
+        try {
+            DB::update('hosts', $update, '`id` = :id', ['id' => $hostId]);
+        } catch (\Throwable $e) {
+            // 列不存在时（如 bwusage/suspend_reason 未执行升级 SQL），降级为只更新基础字段
+            if (stripos($e->getMessage(), 'unknown column') !== false) {
+                unset($update['bwusage'], $update['suspend_reason']);
+                try {
+                    DB::update('hosts', $update, '`id` = :id', ['id' => $hostId]);
+                } catch (\Throwable $e2) {
+                    return ['ok' => false, 'msg' => '同步失败: 写库异常(' . $e2->getMessage() . ')，请先执行 database/upgrade_20260930_host_sync_cols.sql'];
+                }
+                Logger::upstream((int)$provider['id'], $hostId, 'sync_detail', [], ['ok' => true, 'note' => 'downgraded: missing cols'], true);
+                return ['ok' => true, 'msg' => '同步成功（部分字段需升级数据库后才能同步）'];
+            }
+            throw $e;
+        }
         Logger::upstream((int)$provider['id'], $hostId, 'sync_detail', [], ['ok' => true], true);
         return ['ok' => true, 'msg' => '同步成功'];
     }
