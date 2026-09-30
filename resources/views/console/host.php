@@ -93,14 +93,24 @@
         <div class="kv"><span>暂停原因</span><span style="color:var(--danger)"><?= e($host['suspend_reason']) ?></span></div>
       <?php endif; ?>
       <?php
-      // NAT 信息（上游 module 接口返回）
-      $natAcl = $moduleInfo['dcimcloud']['nat_acl'] ?? '';
-      $natWeb = $moduleInfo['dcimcloud']['nat_web'] ?? '';
+      // NAT 信息（上游 module 接口返回），兼容多种字段名
+      $natAcl = $moduleInfo['dcimcloud']['nat_acl'] ?? $moduleInfo['nat_acl'] ?? $moduleInfo['nat'] ?? '';
+      $natWeb = $moduleInfo['dcimcloud']['nat_web'] ?? $moduleInfo['nat_web'] ?? '';
+      // 如果是数组/对象，转成可读文本
+      if (is_array($natAcl)) $natAcl = implode('; ', array_map(function($r){
+          return is_array($r) ? implode(' ', $r) : (string)$r;
+      }, $natAcl));
+      if (is_array($natWeb)) $natWeb = implode('; ', array_map(function($r){
+          return is_array($r) ? implode(' ', $r) : (string)$r;
+      }, $natWeb));
       if ($natAcl): ?>
         <div class="kv"><span>NAT映射</span><span><?= e($natAcl) ?></span></div>
       <?php endif; ?>
       <?php if ($natWeb): ?>
         <div class="kv"><span>共享建站</span><span><?= e($natWeb) ?></span></div>
+      <?php endif; ?>
+      <?php if (!$natAcl && !$natWeb && !empty($moduleInfo)): ?>
+        <div class="kv"><span>NAT映射</span><span style="color:#999">上游未返回 NAT 数据（详见后台上游接口日志）</span></div>
       <?php endif; ?>
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
         <a href="/console/host/<?= (int)$host['id'] ?>/upgrade" class="btn btn-sm btn-primary">升降级配置</a>

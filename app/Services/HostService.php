@@ -224,6 +224,7 @@ class HostService
         $provider = UpstreamService::get((int)$host['provider_id']);
         $client = UpstreamService::client($provider);
         $resp = $client->getHostModule((int)$host['upstream_host_id']);
+        Logger::upstream((int)$provider['id'], $hostId, 'module_info', [], $resp, (int)($resp['status'] ?? 0) === 200);
         if ((int)($resp['status'] ?? 0) !== 200) {
             return [];
         }
