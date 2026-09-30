@@ -112,6 +112,10 @@ class HostService
     protected static function toDate($v): ?string
     {
         if (!$v) return null;
+        // Unix 时间戳直接用
+        if (is_numeric($v) && (int)$v > 1000000000) {
+            return date('Y-m-d', (int)$v);
+        }
         $ts = strtotime((string)$v);
         return $ts ? date('Y-m-d', $ts) : null;
     }

@@ -200,12 +200,17 @@ class ZjmfV1Client
      */
     public function moduleAction(int $hostId, string $func, array $data = []): array
     {
-        $method = in_array($func, ['reinstall', 'repassword', 'rescue'], true) ? 'PUT' : 'PUT';
+        // 上游按钮的 function 名与 API 路径名可能不一致，做映射
+        $apiFuncMap = [
+            'rescue_system' => 'rescue',  // 救援系统按钮 -> rescue 接口
+        ];
+        $apiFunc = $apiFuncMap[$func] ?? $func;
+        $method = in_array($apiFunc, ['reinstall', 'repassword', 'rescue'], true) ? 'PUT' : 'PUT';
         // vnc 为 PUT 取 url；status 为 GET
-        if ($func === 'status') {
+        if ($apiFunc === 'status') {
             return $this->api('GET', '/v1/hosts/' . $hostId . '/module/status', $data);
         }
-        return $this->api($method, '/v1/hosts/' . $hostId . '/module/' . $func, $data);
+        return $this->api($method, '/v1/hosts/' . $hostId . '/module/' . $apiFunc, $data);
     }
 
     /** 可重装系统列表 */
