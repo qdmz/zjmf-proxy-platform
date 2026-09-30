@@ -176,7 +176,8 @@ class ConsoleController extends Controller
         $user = $this->requireLogin();
         csrf_check();
         $cycle = $_POST['billingcycle'] ?? 'monthly';
-        $ret = OrderService::createRenewOrder((int)$user['id'], (int)$id, $cycle);
+        $couponCode = trim($_POST['coupon_code'] ?? '');
+        $ret = OrderService::createRenewOrder((int)$user['id'], (int)$id, $cycle, $couponCode);
         if (!$ret['ok']) {
             flash('error', $ret['msg']);
             redirect('/console/host/' . (int)$id);

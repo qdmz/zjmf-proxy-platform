@@ -398,7 +398,7 @@ class OrderService
     /**
      * 创建续费订单 + 账单
      */
-    public static function createRenewOrder(int $userId, int $hostId, string $cycle): array
+    public static function createRenewOrder(int $userId, int $hostId, string $cycle, string $couponCode = ''): array
     {
         $host = DB::get("SELECT h.*, p.name AS product_name FROM `hosts` h LEFT JOIN `products` p ON p.id=h.product_id WHERE h.`id` = ? LIMIT 1", [$hostId]);
         if (!$host || (int)$host['user_id'] !== $userId) {
@@ -415,8 +415,19 @@ class OrderService
             return ['ok' => false, 'msg' => '该产品不支持所选续费周期'];
         }
         $amount = (float)$price['sale_price'] > 0 ? (float)$price['sale_price'] : (float)$price['price'];
+        // 优惠券
         $couponId = 0;
         $discountAmount = 0.0;
+        $couponCode = trim($couponCode);
+        if ($couponCode !== '') {
+            $cv = coupon_validate($couponCode, $userId, $amount);
+            if (!$cv['ok']) {
+                return ['ok' => false, 'msg' => '优惠券无效: ' . $cv['msg']];
+            }
+            $couponId = (int)$cv['coupon']['id'];
+            $discountAmount = (float)$cv['discount'];
+            $amount = max(0, $amount - $discountAmount);
+        }
         DB::beginTransaction();
         try {
             $orderId = DB::insert('orders', [
@@ -443,6 +454,16 @@ class OrderService
                 'amount' => $amount,
                 'status' => 'unpaid',
             ]);
+            // 记录优惠券使用
+            if ($couponId > 0) {
+                DB::insert('coupon_usages', [
+                    'coupon_id' => $couponId,
+                    'user_id' => $userId,
+                    'order_id' => $orderId,
+                    'discount_amount' => $discountAmount,
+                    'created_at' => date('Y-m-d H:i:s'),
+                ]);
+            }
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();

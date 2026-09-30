@@ -59,7 +59,7 @@
       </div>
 
       <h3 style="margin-top:24px">续费</h3>
-      <form method="post" action="/console/host/<?= (int)$host['id'] ?>/renew" style="display:flex;gap:10px;align-items:center">
+      <form method="post" action="/console/host/<?= (int)$host['id'] ?>/renew" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <?= csrf_field() ?>
         <select class="form-control" name="billingcycle" style="max-width:220px">
           <?php foreach ($prices as $pr): ?>
@@ -67,6 +67,7 @@
             <option value="<?= e($pr['billingcycle']) ?>"><?= e(cycle_name($pr['billingcycle'])) ?> - <?= e(money($showPrice)) ?></option>
           <?php endforeach; ?>
         </select>
+        <input type="text" class="form-control" name="coupon_code" placeholder="优惠券码（可选）" style="max-width:160px">
         <button class="btn btn-primary btn-sm" type="submit">生成续费账单</button>
       </form>
 
