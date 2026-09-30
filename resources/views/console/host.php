@@ -1,5 +1,8 @@
-<div class="container section">
-  <h2><?= e($host['domain']) ?> <span class="badge badge-<?= e($host['status']) ?>"><?= e(host_status_name($host['status'])) ?></span></h2>
+<div class="container section fade-in">
+  <div class="detail-head">
+    <h2>🖥️ <?= e($host['domain']) ?></h2>
+    <span class="badge badge-<?= e($host['status']) ?>"><?= e(host_status_name($host['status'])) ?></span>
+  </div>
 
   <div class="detail-grid">
     <div class="card">
@@ -33,17 +36,17 @@
           <button class="btn btn-sm host-action" data-func="reboot">重启</button>
           <button class="btn btn-sm host-action" data-func="vnc">VNC</button>
         <?php endif; ?>
-        <button class="btn btn-sm" id="btnPower">刷新电源状态</button>
+        <button class="btn btn-sm btn-light" id="btnPower">🔄 刷新电源状态</button>
       </div>
-      <div id="actionMsg" style="font-size:14px;margin-bottom:12px"></div>
+      <div id="actionMsg" style="font-size:14px;margin-bottom:12px;min-height:20px"></div>
 
-      <div class="card" style="background:#f8fafc;margin-top:16px" id="repasswordBox" hidden>
+      <div class="card" style="background:var(--bg-soft);margin-top:16px" id="repasswordBox" hidden>
         <h3>重置密码</h3>
         <div class="form-group"><input class="form-control" id="newPassword" type="password" placeholder="新密码"></div>
         <button class="btn btn-primary btn-sm" id="btnDoRepassword">确认重置</button>
       </div>
 
-      <div class="card" style="background:#f8fafc;margin-top:16px" id="reinstallBox" hidden>
+      <div class="card" style="background:var(--bg-soft);margin-top:16px" id="reinstallBox" hidden>
         <h3>重装系统</h3>
         <div class="form-group">
           <label>选择系统</label>
@@ -53,46 +56,52 @@
           <label>新密码（留空则随机生成）</label>
           <input type="text" class="form-control" id="reinstallPassword" placeholder="重装后的 root 密码，可留空">
         </div>
-        <div class="notice">重装将清空所有数据，请确认已备份！</div>
+        <div class="notice">⚠️ 重装将清空所有数据，请确认已备份！</div>
         <button class="btn btn-danger btn-sm" id="btnDoReinstall">确认重装</button>
       </div>
 
-      <div class="card" style="background:#f8fafc;margin-top:16px" id="vncBox" hidden>
+      <div class="card" style="background:var(--bg-soft);margin-top:16px" id="vncBox" hidden>
         <h3>VNC 控制台</h3>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <a id="vncLink" href="#" target="_blank" class="btn btn-primary btn-sm">打开 VNC 控制台（本站）</a>
-          <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:4px">
+          <label style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
             <input type="checkbox" id="vncUpstreamToggle"> 显示上游原地址
           </label>
         </div>
-        <div id="vncUpstreamBox" hidden style="margin-top:8px">
+        <div id="vncUpstreamBox" hidden style="margin-top:10px">
           <a id="vncUpstreamLink" href="#" target="_blank" class="btn btn-sm">打开 VNC（上游原地址）</a>
-          <div style="font-size:12px;color:#999;margin-top:4px">如果本站 VNC 连不上，可试上游原地址</div>
+          <div style="font-size:12.5px;color:var(--muted-2);margin-top:6px">如果本站 VNC 连不上，可试上游原地址</div>
         </div>
       </div>
 
-      <h3 style="margin-top:24px">续费</h3>
-      <form method="post" action="/console/host/<?= (int)$host['id'] ?>/renew" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <?= csrf_field() ?>
-        <select class="form-control" name="billingcycle" style="max-width:220px">
-          <?php foreach ($prices as $pr): ?>
-            <?php $showPrice = (float)$pr['sale_price'] > 0 ? (float)$pr['sale_price'] : (float)$pr['price']; ?>
-            <option value="<?= e($pr['billingcycle']) ?>"><?= e(cycle_name($pr['billingcycle'])) ?> - <?= e(money($showPrice)) ?></option>
-          <?php endforeach; ?>
-        </select>
-        <input type="text" class="form-control" name="coupon_code" placeholder="优惠券码（可选）" style="max-width:160px">
-        <button class="btn btn-primary btn-sm" type="submit">生成续费账单</button>
-      </form>
+      <div class="panel-sec">
+        <h3>💳 续费</h3>
+        <form method="post" action="/console/host/<?= (int)$host['id'] ?>/renew" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <?= csrf_field() ?>
+          <select class="form-control" name="billingcycle" style="max-width:220px">
+            <?php foreach ($prices as $pr): ?>
+              <?php $showPrice = (float)$pr['sale_price'] > 0 ? (float)$pr['sale_price'] : (float)$pr['price']; ?>
+              <option value="<?= e($pr['billingcycle']) ?>"><?= e(cycle_name($pr['billingcycle'])) ?> - <?= e(money($showPrice)) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <input type="text" class="form-control" name="coupon_code" placeholder="优惠券码（可选）" style="max-width:160px">
+          <button class="btn btn-primary btn-sm" type="submit">生成续费账单</button>
+        </form>
+      </div>
 
-      <h3 style="margin-top:24px">退订</h3>
-      <form method="post" action="/console/host/<?= (int)$host['id'] ?>/cancel" onsubmit="return confirm('确定要退订吗？')">
-        <?= csrf_field() ?>
-        <select class="form-control" name="type" style="max-width:220px;margin-bottom:8px">
-          <option value="Endofbilling">到期删除</option>
-          <option value="Immediate">立即删除（数据不可恢复）</option>
-        </select>
-        <button class="btn btn-danger btn-sm" type="submit">申请退订</button>
-      </form>
+      <div class="panel-sec">
+        <h3>🗑️ 退订</h3>
+        <form method="post" action="/console/host/<?= (int)$host['id'] ?>/cancel" onsubmit="return confirm('确定要退订吗？')">
+          <?= csrf_field() ?>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <select class="form-control" name="type" style="max-width:220px">
+              <option value="Endofbilling">到期删除</option>
+              <option value="Immediate">立即删除（数据不可恢复）</option>
+            </select>
+            <button class="btn btn-danger btn-sm" type="submit">申请退订</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="card">
@@ -132,11 +141,11 @@
       <div class="kv"><span>开通时间</span><span><?= e($host['regdate'] ?? '—') ?></span></div>
       <div class="kv"><span>到期时间</span><span><?= e($host['nextduedate'] ?? '—') ?></span></div>
       <div class="kv"><span>自动续费</span><span>
-        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+        <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
           <input type="checkbox" id="autoRenewToggle" <?= (int)$host['initiative_renew'] ? 'checked' : '' ?>>
           <span id="autoRenewLabel"><?= (int)$host['initiative_renew'] ? '已开启' : '未开启' ?></span>
         </label>
-        <span style="font-size:12px;color:#999">（到期前自动从余额扣费续费）</span>
+        <span style="font-size:12px;color:var(--muted-2)">（到期前自动从余额扣费续费）</span>
       </span></div>
       <?php if (!empty($host['suspend_reason'])): ?>
         <div class="kv"><span>暂停原因</span><span style="color:var(--danger)"><?= e($host['suspend_reason']) ?></span></div>
@@ -159,11 +168,11 @@
         <div class="kv"><span>共享建站</span><span><?= e($natWeb) ?></span></div>
       <?php endif; ?>
       <?php if (!$natAcl && !$natWeb && !empty($moduleInfo)): ?>
-        <div class="kv"><span>NAT映射</span><span style="color:#999">上游未返回 NAT 数据（详见后台上游接口日志）</span></div>
+        <div class="kv"><span>NAT映射</span><span style="color:var(--muted-2)">上游未返回 NAT 数据（详见后台上游接口日志）</span></div>
       <?php endif; ?>
-      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
-        <a href="/console/host/<?= (int)$host['id'] ?>/upgrade" class="btn btn-sm btn-primary">升降级配置</a>
-        <button class="btn btn-sm" id="btnSync">同步实例信息</button>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <a href="/console/host/<?= (int)$host['id'] ?>/upgrade" class="btn btn-sm btn-primary">⬆️ 升降级配置</a>
+        <button class="btn btn-sm" id="btnSync">🔄 同步实例信息</button>
       </div>
     </div>
   </div>

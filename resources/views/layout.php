@@ -4,15 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($title ?? setting('site_name')) ?> - <?= e(setting('site_name')) ?></title>
-<link rel="stylesheet" href="/assets/css/app.css?v=1.3.1">
+<link rel="stylesheet" href="/assets/css/app.css?v=2.0">
 <meta name="csrf-token" content="<?= csrf_token() ?>">
 </head>
 <body>
 <header class="navbar">
   <div class="container navbar-inner">
-    <a class="brand" href="/"><?= e(setting('site_name')) ?></a>
-    <nav class="nav-links">
-      <a href="/">首页</a>
+    <a class="brand" href="/">
+      <span class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/><line x1="6" y1="6.5" x2="6.01" y2="6.5"/><line x1="6" y1="17.5" x2="6.01" y2="17.5"/></svg>
+      </span><?= e(setting('site_name')) ?>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="菜单"><span></span><span></span><span></span></button>
+    <nav class="nav-links" id="navLinks">
+      <a href="/" class="<?= ($_SERVER['REQUEST_URI'] ?? '/') === '/' ? 'active' : '' ?>">首页</a>
       <a href="/shop">云服务器</a>
       <a href="/announcements">公告</a>
       <a href="/faq">常见问题</a>
@@ -22,14 +27,14 @@
     </nav>
     <div class="nav-user">
       <?php if ($user ?? null): ?>
-        <a href="/recharge" class="balance">余额 <?= e($user['balance'] ?? '0.00') ?></a>
+        <a href="/recharge" class="balance">💰 <?= e($user['balance'] ?? '0.00') ?></a>
         <a href="/messages" class="msg">消息<?= (($user['unread'] ?? 0) > 0) ? '(' . ($user['unread']) . ')' : '' ?></a>
         <span class="username"><?= e($user['username']) ?></span>
         <a href="/console/profile">个人资料</a>
         <a href="/logout">退出</a>
       <?php else: ?>
         <a href="/login">登录</a>
-        <a href="/register" class="btn btn-sm">注册</a>
+        <a href="/register" class="btn btn-primary btn-sm">免费注册</a>
       <?php endif; ?>
     </div>
   </div>
@@ -46,15 +51,57 @@
 
 <footer class="footer">
   <div class="container">
-    <p>&copy; <?= date('Y') ?> <?= e(setting('site_name')) ?> · <?= e(setting('site_icp') ?? '') ?></p>
+    <div class="footer-grid">
+      <div>
+        <div class="f-brand">
+          <span class="logo" style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:inline-flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="7" rx="2"/><rect x="2" y="14" width="20" height="7" rx="2"/></svg>
+          </span><?= e(setting('site_name')) ?>
+        </div>
+        <p class="f-desc">稳定高速的云服务器销售平台，即开即用、弹性扩展，为您的业务保驾护航。</p>
+      </div>
+      <div>
+        <h5>产品服务</h5>
+        <ul>
+          <li><a href="/shop">云服务器</a></li>
+          <li><a href="/console">控制台</a></li>
+          <li><a href="/orders">我的订单</a></li>
+          <li><a href="/recharge">余额充值</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>帮助支持</h5>
+        <ul>
+          <li><a href="/faq">常见问题</a></li>
+          <li><a href="/announcements">官方公告</a></li>
+          <li><a href="/tickets">提交工单</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>账户</h5>
+        <ul>
+          <li><a href="/login">登录</a></li>
+          <li><a href="/register">注册</a></li>
+          <li><a href="/console/profile">个人资料</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <?= date('Y') ?> <?= e(setting('site_name')) ?> · <?= e(setting('site_icp') ?? '') ?></p>
+    </div>
   </div>
 </footer>
 <script src="/assets/js/app.js?v=1.3.1"></script>
+<script>
+document.getElementById('navToggle').addEventListener('click', function () {
+  document.getElementById('navLinks').classList.toggle('open');
+});
+</script>
 <!-- 在线客服小部件 -->
 <div id="chatFab" title="在线客服">💬</div>
 <div id="chatPanel" style="display:none">
   <div class="chat-head">
-    <span>智能客服</span>
+    <span>🤖 智能客服</span>
     <div>
       <button id="chatTransfer" class="btn btn-sm" type="button">转人工</button>
       <button id="chatClose" class="btn btn-sm" type="button">✕</button>
