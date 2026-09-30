@@ -40,7 +40,8 @@ set_exception_handler(function (\Throwable $e) {
     http_response_code(500);
     if (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false || is_ajax()) {
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode(['status' => 500, 'msg' => '服务器内部错误'], JSON_UNESCAPED_UNICODE);
+        // 与 json_fail 保持同一格式（code/message），否则前端读不到错误信息
+        echo json_encode(['code' => 500, 'message' => '服务器内部错误: ' . $e->getMessage(), 'data' => null], JSON_UNESCAPED_UNICODE);
     } else {
         echo '<h1>系统繁忙</h1><p>请稍后再试。</p>';
     }
