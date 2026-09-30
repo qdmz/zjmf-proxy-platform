@@ -6,17 +6,26 @@
       <h3>服务器控制</h3>
       <div class="action-btns" id="actionBtns">
         <?php
-        // 从上游能力清单动态渲染按钮
+        // 从上游能力清单动态渲染按钮（兼容 func/function 字段名）
         $btnMap = [];
         foreach (($caps['button'] ?? []) as $b) {
-            $btnMap[$b['func']] = $b['name'];
+            $funcKey = $b['func'] ?? $b['function'] ?? null;
+            if ($funcKey) $btnMap[$funcKey] = $b['name'] ?? $funcKey;
         }
-        $order = ['on', 'off', 'reboot', 'hard_off', 'hard_reboot', 'rescue', 'repassword', 'reinstall', 'vnc'];
+        // 上游实际功能清单（含自定义功能）
+        $order = ['on', 'off', 'reboot', 'hard_off', 'hard_reboot', 'reinstall', 'repassword', 'rescue_system', 'exitRescue', 'vnc', 'snapshot', 'security_groups', 'setting', 'nat_acl', 'module_chart', 'status'];
+        // 兼容旧字段名映射
+        $alias = ['rescue' => 'rescue_system'];
         foreach ($order as $func):
-            if (!isset($btnMap[$func])) continue;
-            $label = $actions[$func] ?? $btnMap[$func];
+            $lookup = $alias[$func] ?? $func;
+            // 尝试直接匹配和别名匹配
+            $matchedFunc = null;
+            if (isset($btnMap[$func])) $matchedFunc = $func;
+            elseif (isset($btnMap[$lookup])) $matchedFunc = $lookup;
+            if ($matchedFunc === null) continue;
+            $label = $btnMap[$matchedFunc];
         ?>
-          <button class="btn btn-sm host-action" data-func="<?= e($func) ?>"><?= e($label) ?></button>
+          <button class="btn btn-sm host-action" data-func="<?= e($matchedFunc) ?>"><?= e($label) ?></button>
         <?php endforeach; ?>
         <?php if (empty($btnMap)): ?>
           <button class="btn btn-sm host-action" data-func="on">开机</button>

@@ -14,7 +14,18 @@ class HostService
         'on' => '开机', 'off' => '关机', 'reboot' => '重启',
         'hard_off' => '强制关机', 'hard_reboot' => '强制重启',
         'repassword' => '重置密码', 'reinstall' => '重装系统',
-        'rescue' => '救援模式', 'vnc' => 'VNC 控制台',
+        'rescue' => '救援模式', 'rescue_system' => '救援系统',
+        'exitRescue' => '退出救援系统', 'vnc' => 'VNC 控制台',
+    ];
+
+    /** 需要独立页面的自定义功能（非简单 PUT 操作） */
+    public static array $customPageActions = [
+        'snapshot' => '快照/备份',
+        'security_groups' => '安全组',
+        'setting' => '设置',
+        'nat_acl' => 'NAT转发',
+        'module_chart' => '图表',
+        'status' => '服务器电源状态',
     ];
 
     public static function get(int $id)
@@ -114,6 +125,9 @@ class HostService
         if (!$host || (int)$host['upstream_host_id'] <= 0) {
             return ['ok' => false, 'msg' => '实例未关联上游'];
         }
+        if (isset(self::$customPageActions[$func])) {
+            return ['ok' => false, 'msg' => '「' . self::$customPageActions[$func] . '」功能页面开发中，敬请期待'];
+        }
         if (!isset(self::$userActions[$func]) && $operatorId !== -1) {
             return ['ok' => false, 'msg' => '不支持的操作'];
         }
@@ -211,7 +225,18 @@ class HostService
             }
             return ['button' => $buttons, '_raw' => $data];
         }
-        // 格式2：默认扁平结构，$data['module'] 是功能数组
+        // 格式2：扁平数组（上游实际返回），直接是按钮列表
+        if (is_array($data) && isset($data[0]) && is_array($data[0])) {
+            $buttons = [];
+            foreach ($data as $btn) {
+                $func = $btn['func'] ?? $btn['function'] ?? null;
+                if ($func) {
+                    $buttons[$func] = $btn;
+                }
+            }
+            return ['button' => $buttons, '_raw' => $data];
+        }
+        // 格式3：默认结构，$data['module'] 是功能数组
         return $data['module'] ?? $data;
     }
 
