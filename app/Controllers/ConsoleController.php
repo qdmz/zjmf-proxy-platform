@@ -3,6 +3,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Core\DB;
+use App\Core\Logger;
 use App\Services\HostService;
 use App\Services\OrderService;
 use App\Services\UpstreamService;
