@@ -92,7 +92,8 @@
     if(!text) return;
     input.value='';
     addMsg(text,'user');
-    fetch('/chat/send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','X-CSRF-TOKEN':csrf},
+    // 不发送 X-CSRF-TOKEN 自定义头，避免触发主机 WAF
+    fetch('/chat/send',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body:'_csrf='+encodeURIComponent(csrf)+'&message='+encodeURIComponent(text)})
       .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
       .then(function(j){

@@ -120,7 +120,39 @@ class HostService
             // 延迟状态以 query 为准，这里仅记录
         }
         $data = $resp['data'] ?? null;
+        // VNC URL 处理：上游可能返回它自己的域名，改写为本站域名以使用我们的 novnc 代理页
+        if ($func === 'vnc' && is_array($data) && !empty($data['url'])) {
+            $data['url'] = self::rewriteVncUrl((string)$data['url']);
+        }
         return ['ok' => true, 'msg' => self::$userActions[$func] . '指令已发送', 'data' => $data];
+    }
+
+    /**
+     * 改写 VNC URL 为本站域名
+     * 上游返回如 https://upstream.com/dcim/novnc?url=... 时，改为 https://本站/dcim/novnc?url=...
+     */
+    protected static function rewriteVncUrl(string $url): string
+    {
+        $parts = parse_url($url);
+        if (empty($parts['host'])) {
+            return $url;
+        }
+        // 如果已经是本站域名，直接返回
+        $siteHost = $_SERVER['HTTP_HOST'] ?? '';
+        if ($parts['host'] === $siteHost) {
+            return $url;
+        }
+        // 只改写 /dcim/novnc 路径的 URL（上游代理型 VNC）
+        $path = $parts['path'] ?? '';
+        if (strpos($path, '/dcim/novnc') !== 0 && strpos($path, '/novnc') === false) {
+            return $url; // 外部直连型 VNC，不改写
+        }
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $newUrl = $scheme . '://' . $siteHost . $path;
+        if (!empty($parts['query'])) {
+            $newUrl .= '?' . $parts['query'];
+        }
+        return $newUrl;
     }
 
     /** 获取上游能力按钮清单 */
