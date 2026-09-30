@@ -131,7 +131,13 @@
       <div class="kv"><span>付费周期</span><span><?= e(cycle_name($host['billingcycle'])) ?></span></div>
       <div class="kv"><span>开通时间</span><span><?= e($host['regdate'] ?? '—') ?></span></div>
       <div class="kv"><span>到期时间</span><span><?= e($host['nextduedate'] ?? '—') ?></span></div>
-      <div class="kv"><span>自动续费</span><span><?= (int)$host['initiative_renew'] ? '已开启' : '未开启' ?></span></div>
+      <div class="kv"><span>自动续费</span><span>
+        <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="autoRenewToggle" <?= (int)$host['initiative_renew'] ? 'checked' : '' ?>>
+          <span id="autoRenewLabel"><?= (int)$host['initiative_renew'] ? '已开启' : '未开启' ?></span>
+        </label>
+        <span style="font-size:12px;color:#999">（到期前自动从余额扣费续费）</span>
+      </span></div>
       <?php if (!empty($host['suspend_reason'])): ?>
         <div class="kv"><span>暂停原因</span><span style="color:var(--danger)"><?= e($host['suspend_reason']) ?></span></div>
       <?php endif; ?>
@@ -284,5 +290,22 @@ document.getElementById('btnPower').addEventListener('click', function () {
 // VNC 上游地址显示开关
 document.getElementById('vncUpstreamToggle').addEventListener('change', function () {
   document.getElementById('vncUpstreamBox').hidden = !this.checked;
+});
+// 自动续费开关
+document.getElementById('autoRenewToggle').addEventListener('change', function () {
+  var on = this.checked ? 1 : 0;
+  var label = document.getElementById('autoRenewLabel');
+  var box = this;
+  box.disabled = true;
+  post('/console/host/' + hostId + '/auto-renew', { on: on }, function (j) {
+    box.disabled = false;
+    if (j.code === 0) {
+      label.textContent = on ? '已开启' : '未开启';
+      showMsg(j.message || '已更新', true);
+    } else {
+      box.checked = !on; // 失败回滚
+      showMsg(j.message || '更新失败', false);
+    }
+  });
 });
 </script>

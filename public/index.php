@@ -56,6 +56,7 @@ $router->get('/console/host/{id}/upgrade', 'ConsoleController@upgrade');
 $router->get('/console/host/{id}/module-tab', 'ConsoleController@moduleTab');
 $router->get('/console/host/{id}/power', 'ConsoleController@powerStatus');
 $router->get('/console/host/{id}/os', 'ConsoleController@reinstallOs');
+$router->post('/console/host/{id}/auto-renew', 'ConsoleController@autoRenew');
 $router->post('/console/host/{id}/renew', 'ConsoleController@renew');
 $router->post('/console/host/{id}/cancel', 'ConsoleController@cancel');
 $router->get('/messages', 'ConsoleController@messages');

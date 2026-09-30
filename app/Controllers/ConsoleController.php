@@ -117,9 +117,13 @@ class ConsoleController extends Controller
         if (!$ret['ok']) {
             $this->fail($ret['msg']);
         }
-        // VNC 返回控制台地址
+        // VNC 返回控制台地址（含上游原地址）
         if ($func === 'vnc' && !empty($ret['data']['url'])) {
-            $this->json(['url' => $ret['data']['url']], $ret['msg']);
+            $out = ['url' => $ret['data']['url']];
+            if (!empty($ret['data']['url_upstream'])) {
+                $out['url_upstream'] = $ret['data']['url_upstream'];
+            }
+            $this->json($out, $ret['msg']);
         }
         $this->json(null, $ret['msg']);
     }
@@ -139,6 +143,28 @@ class ConsoleController extends Controller
             $this->fail('获取系统列表失败: ' . ($resp['msg'] ?? ''));
         }
         $this->json($resp['data']['os'] ?? []);
+    }
+
+    /** 自动续费开关（AJAX） */
+    public function autoRenew(string $id): void
+    {
+        $user = $this->requireLogin();
+        $host = DB::get("SELECT * FROM `hosts` WHERE `id` = ? AND `user_id` = ? LIMIT 1", [(int)$id, (int)$user['id']]);
+        if (!$host || (int)$host['upstream_host_id'] <= 0) {
+            $this->fail('实例不存在');
+        }
+        $on = !empty($_POST['on']) ? 1 : 0;
+        $provider = UpstreamService::get((int)$host['provider_id']);
+        $client = UpstreamService::client($provider);
+        set_time_limit(60);
+        $resp = $client->setAutoRenew((int)$host['upstream_host_id'], $on);
+        $ok = (int)($resp['status'] ?? 0) === 200;
+        Logger::upstream((int)$provider['id'], (int)$host['id'], 'set_auto_renew', ['on' => $on], $resp, $ok);
+        if (!$ok) {
+            $this->fail('上游执行失败: ' . ($resp['msg'] ?? '未知错误'));
+        }
+        DB::update('hosts', ['initiative_renew' => $on], '`id` = :id', ['id' => (int)$host['id']]);
+        $this->json(['on' => $on], $on ? '自动续费已开启' : '自动续费已关闭');
     }
 
     /** 同步实例信息（AJAX） */
