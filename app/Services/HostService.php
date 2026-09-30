@@ -147,6 +147,9 @@ class HostService
         if ($func === 'reinstall' && empty($params['os_id'])) {
             return ['ok' => false, 'msg' => '请选择操作系统'];
         }
+        if ($func === 'reinstall' && in_array((string)$params['os_id'], ['undefined', 'null', ''], true)) {
+            return ['ok' => false, 'msg' => '系统镜像列表加载异常，请刷新页面重试'];
+        }
 
         $resp = $client->moduleAction((int)$host['upstream_host_id'], $func, $params);
         $ok = (int)($resp['status'] ?? 0) === 200;

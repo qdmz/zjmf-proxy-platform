@@ -213,7 +213,10 @@ document.querySelectorAll('.host-action').forEach(function (btn) {
         if (j.code === 0 && j.data && j.data.length) {
           j.data.forEach(function (os) {
             var opt = document.createElement('option');
-            opt.value = os.id; opt.textContent = os.name;
+            // 兼容多种字段名：id / os_id / image_id / value
+            var oid = os.id ?? os.os_id ?? os.image_id ?? os.value ?? '';
+            var oname = os.name ?? os.os_name ?? os.image_name ?? os.label ?? JSON.stringify(os);
+            opt.value = oid; opt.textContent = oname;
             sel.appendChild(opt);
           });
         } else { sel.innerHTML = '<option>获取失败</option>'; }
