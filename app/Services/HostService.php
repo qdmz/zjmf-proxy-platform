@@ -58,6 +58,7 @@ class HostService
             'domain' => $h['domain'] ?? $host['domain'],
             'username' => $h['username'] ?? $host['username'],
             'dedicated_ip' => $h['dedicatedip'] ?? $h['dedicated_ip'] ?? $host['dedicated_ip'],
+            'inner_ip' => $h['inner_ip'] ?? $h['intranet_ip'] ?? $h['private_ip'] ?? $h['lan_ip'] ?? $host['inner_ip'] ?? '',
             'assigned_ips' => json_encode(array_values($assignedIps), JSON_UNESCAPED_UNICODE),
             'os' => $h['os'] ?? $host['os'],
             'port' => (int)($h['port'] ?? $host['port']),
@@ -80,9 +81,9 @@ class HostService
         try {
             DB::update('hosts', $update, '`id` = :id', ['id' => $hostId]);
         } catch (\Throwable $e) {
-            // 列不存在时（如 bwusage/suspend_reason 未执行升级 SQL），降级为只更新基础字段
+            // 列不存在时（如 bwusage/suspend_reason/inner_ip 未执行升级 SQL），降级为只更新基础字段
             if (stripos($e->getMessage(), 'unknown column') !== false) {
-                unset($update['bwusage'], $update['suspend_reason']);
+                unset($update['bwusage'], $update['suspend_reason'], $update['inner_ip']);
                 try {
                     DB::update('hosts', $update, '`id` = :id', ['id' => $hostId]);
                 } catch (\Throwable $e2) {

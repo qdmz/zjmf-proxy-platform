@@ -119,6 +119,7 @@ CREATE TABLE IF NOT EXISTS `hosts` (
   `username` VARCHAR(100) NOT NULL DEFAULT '',
   `password_enc` VARCHAR(255) NOT NULL DEFAULT '',
   `dedicated_ip` VARCHAR(45) NOT NULL DEFAULT '',
+  `inner_ip` VARCHAR(45) NOT NULL DEFAULT '' COMMENT '内网IP',
   `assigned_ips` TEXT,
   `os` VARCHAR(100) NOT NULL DEFAULT '',
   `port` INT NOT NULL DEFAULT 0,

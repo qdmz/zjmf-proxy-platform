@@ -77,6 +77,9 @@
       <div class="kv"><span>产品</span><span><?= e($host['product_name'] ?? '') ?></span></div>
       <div class="kv"><span>主机名</span><span><?= e($host['domain']) ?></span></div>
       <div class="kv"><span>主IP</span><span><?= e($host['dedicated_ip'] ?: '—') ?></span></div>
+      <?php if (!empty($host['inner_ip'])): ?>
+        <div class="kv"><span>内网IP</span><span><?= e($host['inner_ip']) ?></span></div>
+      <?php endif; ?>
       <?php if (!empty($host['assigned_ips_arr'])): ?>
         <div class="kv"><span>附加IP</span><span><?= e(implode(', ', $host['assigned_ips_arr'])) ?></span></div>
       <?php endif; ?>
