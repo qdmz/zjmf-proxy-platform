@@ -157,6 +157,14 @@ $router->post('/admin/coupons/{id}/update', 'Admin\CouponController@update');
 $router->post('/admin/coupons/{id}/delete', 'Admin\CouponController@delete');
 $router->get('/admin/coupons/{id}/usages', 'Admin\CouponController@usages');
 
+$router->get('/admin/backup', 'Admin\BackupController@index');
+$router->post('/admin/backup/db', 'Admin\BackupController@backupDb');
+$router->post('/admin/backup/files', 'Admin\BackupController@backupFiles');
+$router->get('/admin/backup/download/{name}', 'Admin\BackupController@download');
+$router->post('/admin/backup/delete', 'Admin\BackupController@delete');
+$router->post('/admin/backup/restore-db', 'Admin\BackupController@restoreDb');
+$router->post('/admin/backup/restore-files', 'Admin\BackupController@restoreFiles');
+
 // ---------------- 404 ----------------
 $router->notFound(function () {
     http_response_code(404);

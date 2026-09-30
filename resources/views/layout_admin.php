@@ -34,6 +34,7 @@
       <a href="/admin/coupons">🎟️ 优惠券</a>
       <div class="nav-sec">系统</div>
       <a href="/admin/settings">⚙️ 系统设置</a>
+      <a href="/admin/backup">💾 数据备份</a>
       <a href="/admin/logs">📝 管理员日志</a>
       <a href="/" target="_blank">🌐 前台首页</a>
       <a href="/admin/logout">🚪 退出登录</a>
