@@ -65,3 +65,36 @@
     </form>
   </div>
 </div>
+
+<div class="card" style="margin-top:24px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3>可配置项 <small class="muted">（操作系统、数据盘、CPU/内存等从上游同步）</small></h3>
+    <form method="post" action="/admin/products/<?= (int)$product['id'] ?>/resync" style="margin:0">
+      <?= csrf_field() ?>
+      <button class="btn btn-sm" type="submit" onclick="return confirm('从上游重新拉取该产品的可配置项？')">从上游同步配置项</button>
+    </form>
+  </div>
+  <?php if (empty($options)): ?>
+    <div class="empty">暂无配置项，点击右上按钮从上游同步</div>
+  <?php else: ?>
+    <table class="table">
+      <thead><tr><th>配置项</th><th>类型</th><th>可选值</th></tr></thead>
+      <tbody>
+        <?php foreach ($options as $opt): ?>
+          <?php $subs = DB::all("SELECT * FROM `product_config_subs` WHERE `option_id` = ?", [(int)$opt['id']]); ?>
+          <tr>
+            <td><?= e($opt['name']) ?> <small class="muted">#<?= (int)$opt['upstream_option_id'] ?></small></td>
+            <td><?= e(option_type_name((int)$opt['option_type'])) ?></td>
+            <td>
+              <?php if (in_array((int)$opt['option_type'], [4, 7, 9, 11, 14], true)): ?>
+                <span class="muted">数量型（<?= (int)$opt['qty_min'] ?>–<?= (int)$opt['qty_max'] ?><?= e($opt['unit']) ?>）</span>
+              <?php else: ?>
+                <?= e(implode('、', array_map(fn($s) => $s['option_name'], $subs))) ?>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  <?php endif; ?>
+</div>

@@ -350,4 +350,87 @@ class UpstreamService
             ], '`id` = :id', ['id' => $pr['id']]);
         }
     }
+
+    /** 单个产品从上游重新同步配置项（操作系统/数据盘等） */
+    public static function syncProductConfig(int $productId): array
+    {
+        $product = DB::get("SELECT * FROM `products` WHERE `id` = ? LIMIT 1", [$productId]);
+        if (!$product || (int)$product['upstream_pid'] <= 0) {
+            return ['ok' => false, 'msg' => '产品未关联上游'];
+        }
+        $provider = self::get((int)$product['provider_id']);
+        if (!$provider) {
+            return ['ok' => false, 'msg' => '供货商不存在'];
+        }
+        $client = self::client($provider);
+        $pid = (int)$product['upstream_pid'];
+        $detail = $client->getProductConfig($pid);
+        if ((int)($detail['status'] ?? 0) !== 200) {
+            return ['ok' => false, 'msg' => $detail['msg'] ?? '上游接口失败'];
+        }
+        $d = $detail['data'] ?? [];
+        $markupType = $product['markup_type'];
+        $markupValue = (float)$product['markup_value'];
+        $count = 0;
+        // 配置选项
+        foreach ($d['configoptions'] ?? [] as $opt) {
+            $oid = (int)($opt['id'] ?? 0);
+            if ($oid <= 0) continue;
+            $count++;
+            $eopt = DB::get(
+                "SELECT * FROM `product_config_options` WHERE `product_id` = ? AND `upstream_option_id` = ? LIMIT 1",
+                [$productId, $oid]
+            );
+            $odata = [
+                'name' => $opt['name'] ?? ('选项' . $oid),
+                'option_type' => (int)($opt['type'] ?? 1),
+                'qty_min' => (int)($opt['qty_minimum'] ?? $opt['qty_min'] ?? 1),
+                'qty_max' => (int)($opt['qty_maximum'] ?? $opt['qty_max'] ?? 1),
+                'unit' => $opt['unit'] ?? '',
+            ];
+            if ($eopt) {
+                DB::update('product_config_options', $odata, '`id` = :id', ['id' => $eopt['id']]);
+                $optionId = (int)$eopt['id'];
+            } else {
+                $odata['product_id'] = $productId;
+                $odata['upstream_option_id'] = $oid;
+                $optionId = (int)DB::insert('product_config_options', $odata);
+            }
+            foreach ($opt['sub'] ?? [] as $sub) {
+                $sid = (int)($sub['id'] ?? 0);
+                if ($sid <= 0) continue;
+                $upJson = [];
+                $saleJson = [];
+                foreach (($sub['pricing'] ?? []) as $sp) {
+                    $bc = $sp['billingcycle'] ?? '';
+                    if ($bc) {
+                        $upJson[$bc] = (float)($sp['price'] ?? 0);
+                        $saleJson[$bc] = BillingService::applyMarkup((float)($sp['price'] ?? 0), $markupType, $markupValue);
+                    }
+                }
+                if (!$upJson && isset($sub['price'])) {
+                    $upJson = ['*' => (float)$sub['price']];
+                    $saleJson = ['*' => BillingService::applyMarkup((float)$sub['price'], $markupType, $markupValue)];
+                }
+                $esub = DB::get(
+                    "SELECT * FROM `product_config_subs` WHERE `option_id` = ? AND `upstream_sub_id` = ? LIMIT 1",
+                    [$optionId, $sid]
+                );
+                $sdata = [
+                    'option_name' => $sub['option_name'] ?? $sub['name'] ?? ('子项' . $sid),
+                    'upstream_price_json' => json_encode($upJson, JSON_UNESCAPED_UNICODE),
+                    'price_json' => json_encode($saleJson, JSON_UNESCAPED_UNICODE),
+                ];
+                if ($esub) {
+                    DB::update('product_config_subs', $sdata, '`id` = :id', ['id' => $esub['id']]);
+                } else {
+                    $sdata['option_id'] = $optionId;
+                    $sdata['upstream_sub_id'] = $sid;
+                    DB::insert('product_config_subs', $sdata);
+                }
+            }
+        }
+        DB::update('products', ['upstream_updated_at' => date('Y-m-d H:i:s')], '`id` = :id', ['id' => $productId]);
+        return ['ok' => true, 'msg' => "已同步 {$count} 个配置项"];
+    }
 }

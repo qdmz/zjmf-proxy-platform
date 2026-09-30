@@ -53,15 +53,45 @@ class ConsoleController extends Controller
         $host['password'] = $host['password_enc'] ? dec_data($host['password_enc']) : '';
         $host['assigned_ips_arr'] = json_decode($host['assigned_ips'] ?? '[]', true) ?: [];
         $caps = HostService::capabilities((int)$host['id']);
+        $moduleInfo = HostService::moduleInfo((int)$host['id']);
         $prices = DB::all("SELECT * FROM `product_prices` WHERE `product_id` = ? ORDER BY `price`", [(int)$host['product_id']]);
         return $this->view('console/host', [
             'title' => '实例管理',
             'host' => $host,
             'caps' => $caps,
+            'moduleInfo' => $moduleInfo,
             'prices' => $prices,
             'actions' => HostService::$userActions,
             'user' => $user,
         ]);
+    }
+
+    /** VNC noVNC 代理页面（上游返回本站域名的 novnc 地址时使用） */
+    public function novnc(): string
+    {
+        $user = $this->requireLogin();
+        return $this->view('console/novnc', [
+            'title' => 'VNC 控制台',
+            'user' => $user,
+        ]);
+    }
+
+    /** 模块自定义标签页内容（NAT转发/快照/安全组等，AJAX 返回上游 HTML） */
+    public function moduleTab(string $id): void
+    {
+        $user = $this->requireLogin();
+        $host = DB::get("SELECT * FROM `hosts` WHERE `id` = ? AND `user_id` = ? LIMIT 1", [(int)$id, (int)$user['id']]);
+        if (!$host) {
+            $this->fail('实例不存在');
+        }
+        $key = trim($_GET['key'] ?? '');
+        if ($key === '') {
+            $this->fail('参数错误');
+        }
+        $html = HostService::moduleCustomHtml((int)$host['id'], $key);
+        header('Content-Type: text/html; charset=utf-8');
+        echo $html;
+        exit;
     }
 
     /** 实例操作（AJAX） */
@@ -152,6 +182,80 @@ class ConsoleController extends Controller
             redirect('/console/host/' . (int)$id);
         }
         redirect('/pay/' . $ret['bill_no']);
+    }
+
+    /** 升降级配置页面 */
+    public function upgrade(string $id): string
+    {
+        $user = $this->requireLogin();
+        $host = DB::get("SELECT * FROM `hosts` WHERE `id` = ? AND `user_id` = ? LIMIT 1", [(int)$id, (int)$user['id']]);
+        if (!$host || (int)$host['upstream_host_id'] <= 0) {
+            http_response_code(404);
+            return $this->view('errors/404', ['title' => '实例不存在']);
+        }
+        $provider = UpstreamService::get((int)$host['provider_id']);
+        $client = UpstreamService::client($provider);
+        // 获取可升降级配置项
+        $resp = $client->upgradeConfig((int)$host['upstream_host_id'], 'GET');
+        $options = [];
+        $err = '';
+        if ((int)($resp['status'] ?? 0) === 200) {
+            $options = $resp['data']['options'] ?? $resp['data'] ?? [];
+        } else {
+            $err = $resp['msg'] ?? '该产品不支持升降级';
+        }
+        return $this->view('console/upgrade', [
+            'title' => '升降级配置',
+            'host' => $host,
+            'options' => $options,
+            'err' => $err,
+            'user' => $user,
+        ]);
+    }
+
+    /** 升降级报价（AJAX） */
+    public function upgradeQuote(string $id): void
+    {
+        $user = $this->requireLogin();
+        $host = DB::get("SELECT * FROM `hosts` WHERE `id` = ? AND `user_id` = ? LIMIT 1", [(int)$id, (int)$user['id']]);
+        if (!$host || (int)$host['upstream_host_id'] <= 0) {
+            $this->fail('实例不存在');
+        }
+        $configoption = $_POST['configoption'] ?? [];
+        if (!is_array($configoption) || !$configoption) {
+            $this->fail('请选择要变更的配置项');
+        }
+        $provider = UpstreamService::get((int)$host['provider_id']);
+        $client = UpstreamService::client($provider);
+        $resp = $client->upgradeConfig((int)$host['upstream_host_id'], 'POST', ['configoption' => $configoption]);
+        if ((int)($resp['status'] ?? 0) !== 200) {
+            $this->fail('报价失败: ' . ($resp['msg'] ?? '未知错误'));
+        }
+        $this->ok($resp['data'] ?? []);
+    }
+
+    /** 升降级结算（余额支付） */
+    public function upgradeCheckout(string $id): void
+    {
+        $user = $this->requireLogin();
+        csrf_check();
+        $host = DB::get("SELECT * FROM `hosts` WHERE `id` = ? AND `user_id` = ? LIMIT 1", [(int)$id, (int)$user['id']]);
+        if (!$host || (int)$host['upstream_host_id'] <= 0) {
+            flash('error', '实例不存在');
+            redirect('/console/host/' . (int)$id);
+        }
+        $provider = UpstreamService::get((int)$host['provider_id']);
+        $client = UpstreamService::client($provider);
+        set_time_limit(90);
+        $resp = $client->upgradeConfigCheckout((int)$host['upstream_host_id']);
+        if ((int)($resp['status'] ?? 0) !== 200) {
+            flash('error', '升降级失败: ' . ($resp['msg'] ?? '未知错误'));
+            redirect('/console/host/' . (int)$id . '/upgrade');
+        }
+        // 上游扣费成功，同步实例信息
+        HostService::syncFromUpstream((int)$host['id']);
+        flash('success', '升降级成功，配置已更新');
+        redirect('/console/host/' . (int)$id);
     }
 
     /** 退订申请 */

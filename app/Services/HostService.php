@@ -42,19 +42,26 @@ class HostService
             return ['ok' => false, 'msg' => '同步失败: ' . ($resp['msg'] ?? '未知错误')];
         }
         $h = $resp['data']['host'] ?? $resp['data'] ?? [];
+        // assignedips 上游返回逗号分隔字符串，转为数组
+        $assignedIps = $h['assignedips'] ?? $h['assigned_ips'] ?? [];
+        if (is_string($assignedIps)) {
+            $assignedIps = array_filter(array_map('trim', explode(',', $assignedIps)));
+        }
         $update = [
             'domain' => $h['domain'] ?? $host['domain'],
             'username' => $h['username'] ?? $host['username'],
             'dedicated_ip' => $h['dedicatedip'] ?? $h['dedicated_ip'] ?? $host['dedicated_ip'],
-            'assigned_ips' => json_encode($h['assignedips'] ?? [], JSON_UNESCAPED_UNICODE),
+            'assigned_ips' => json_encode(array_values($assignedIps), JSON_UNESCAPED_UNICODE),
             'os' => $h['os'] ?? $host['os'],
             'port' => (int)($h['port'] ?? $host['port']),
-            'bwlimit' => (string)($h['bwlimit'] ?? $host['bwlimit']),
+            'bwlimit' => (string)($h['bwlimit'] ?? $host['bwlimit'] ?? ''),
+            'bwusage' => (string)($h['bwusage'] ?? $host['bwusage'] ?? ''),
             'status' => map_upstream_status($h['domainstatus'] ?? ''),
             'billingcycle' => $h['billingcycle'] ?? $host['billingcycle'],
             'regdate' => self::toDate($h['regdate'] ?? null),
             'nextduedate' => self::toDate($h['nextduedate'] ?? null),
             'initiative_renew' => (int)($h['initiative_renew'] ?? 0),
+            'suspend_reason' => ($h['suspend_reason'] ?? '') . ($h['suspend_type'] ?? '' ? ' [' . $h['suspend_type'] . ']' : ''),
         ];
         if (!empty($h['password'])) {
             $update['password_enc'] = enc_data((string)$h['password']);
@@ -130,6 +137,40 @@ class HostService
             return [];
         }
         return $resp['data']['module'] ?? [];
+    }
+
+    /** 获取上游模块完整信息（含自定义区域标签页、NAT信息等） */
+    public static function moduleInfo(int $hostId): array
+    {
+        $host = self::get($hostId);
+        if (!$host || (int)$host['upstream_host_id'] <= 0) {
+            return [];
+        }
+        $provider = UpstreamService::get((int)$host['provider_id']);
+        $client = UpstreamService::client($provider);
+        $resp = $client->getHostModule((int)$host['upstream_host_id']);
+        if ((int)($resp['status'] ?? 0) !== 200) {
+            return [];
+        }
+        return $resp['data'] ?? [];
+    }
+
+    /** 获取模块自定义标签页内容（如 NAT转发、快照、安全组），上游返回 HTML */
+    public static function moduleCustomHtml(int $hostId, string $key): string
+    {
+        $host = self::get($hostId);
+        if (!$host || (int)$host['upstream_host_id'] <= 0 || $key === '') {
+            return '';
+        }
+        $provider = UpstreamService::get((int)$host['provider_id']);
+        $client = UpstreamService::client($provider);
+        // 上游 /v1/hosts/:id/module/custom?key= 返回 HTML
+        $resp = $client->api('GET', '/v1/hosts/' . (int)$host['upstream_host_id'] . '/module/custom', ['key' => $key]);
+        // api() 返回数组；若上游直接返回 HTML 字符串，这里做兼容
+        if (is_string($resp)) {
+            return $resp;
+        }
+        return (string)($resp['data']['html'] ?? $resp['data'] ?? '');
     }
 
     /** 批量同步某供货商下所有实例状态（供 cron 调用） */

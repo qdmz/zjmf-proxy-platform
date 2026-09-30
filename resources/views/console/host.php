@@ -75,18 +75,78 @@
       <h3>实例信息</h3>
       <div class="kv"><span>产品</span><span><?= e($host['product_name'] ?? '') ?></span></div>
       <div class="kv"><span>主机名</span><span><?= e($host['domain']) ?></span></div>
-      <div class="kv"><span>主IP</span><span><?= e($host['dedicated_ip']) ?></span></div>
+      <div class="kv"><span>主IP</span><span><?= e($host['dedicated_ip'] ?: '—') ?></span></div>
       <?php if (!empty($host['assigned_ips_arr'])): ?>
         <div class="kv"><span>附加IP</span><span><?= e(implode(', ', $host['assigned_ips_arr'])) ?></span></div>
       <?php endif; ?>
-      <div class="kv"><span>用户名</span><span><?= e($host['username']) ?></span></div>
+      <div class="kv"><span>用户名</span><span><?= e($host['username'] ?: '—') ?></span></div>
       <div class="kv"><span>密码</span><span><?= $host['password'] ? e($host['password']) : '—' ?></span></div>
-      <div class="kv"><span>操作系统</span><span><?= e($host['os']) ?></span></div>
+      <div class="kv"><span>操作系统</span><span><?= e($host['os'] ?: '—') ?></span></div>
+      <div class="kv"><span>端口</span><span><?= (int)$host['port'] > 0 ? (int)$host['port'] : '—' ?></span></div>
+      <div class="kv"><span>带宽</span><span><?= e($host['bwlimit'] ?: '—') ?></span></div>
       <div class="kv"><span>付费周期</span><span><?= e(cycle_name($host['billingcycle'])) ?></span></div>
+      <div class="kv"><span>开通时间</span><span><?= e($host['regdate'] ?? '—') ?></span></div>
       <div class="kv"><span>到期时间</span><span><?= e($host['nextduedate'] ?? '—') ?></span></div>
-      <button class="btn btn-sm" id="btnSync" style="margin-top:12px">同步实例信息</button>
+      <div class="kv"><span>自动续费</span><span><?= (int)$host['initiative_renew'] ? '已开启' : '未开启' ?></span></div>
+      <?php if (!empty($host['suspend_reason'])): ?>
+        <div class="kv"><span>暂停原因</span><span style="color:var(--danger)"><?= e($host['suspend_reason']) ?></span></div>
+      <?php endif; ?>
+      <?php
+      // NAT 信息（上游 module 接口返回）
+      $natAcl = $moduleInfo['dcimcloud']['nat_acl'] ?? '';
+      $natWeb = $moduleInfo['dcimcloud']['nat_web'] ?? '';
+      if ($natAcl): ?>
+        <div class="kv"><span>NAT映射</span><span><?= e($natAcl) ?></span></div>
+      <?php endif; ?>
+      <?php if ($natWeb): ?>
+        <div class="kv"><span>共享建站</span><span><?= e($natWeb) ?></span></div>
+      <?php endif; ?>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+        <a href="/console/host/<?= (int)$host['id'] ?>/upgrade" class="btn btn-sm btn-primary">升降级配置</a>
+        <button class="btn btn-sm" id="btnSync">同步实例信息</button>
+      </div>
     </div>
   </div>
+
+  <?php
+  // 模块自定义标签页：NAT转发、快照、安全组等
+  $clientArea = $moduleInfo['module_client_area'] ?? [];
+  if (!empty($clientArea)):
+  ?>
+  <div class="card" style="margin-top:24px">
+    <h3>高级管理</h3>
+    <div class="tabs" id="moduleTabs">
+      <?php foreach ($clientArea as $i => $tab): ?>
+        <a href="javascript:void(0)" data-key="<?= e($tab['key']) ?>" class="<?= $i === 0 ? 'active' : '' ?>"><?= e($tab['name']) ?></a>
+      <?php endforeach; ?>
+    </div>
+    <div id="moduleTabContent" style="min-height:200px"><div class="empty">加载中…</div></div>
+  </div>
+  <script>
+  (function () {
+    var tabs = document.querySelectorAll('#moduleTabs a');
+    var content = document.getElementById('moduleTabContent');
+    function loadTab(key) {
+      content.innerHTML = '<div class="empty">加载中…</div>';
+      fetch('/console/host/' + hostId + '/module-tab?key=' + encodeURIComponent(key), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(function (r) { return r.text(); }).then(function (html) {
+        content.innerHTML = html || '<div class="empty">暂无内容</div>';
+      }).catch(function () {
+        content.innerHTML = '<div class="empty">加载失败，请稍后重试</div>';
+      });
+    }
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        tabs.forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        loadTab(tab.dataset.key);
+      });
+    });
+    if (tabs.length) loadTab(tabs[0].dataset.key);
+  })();
+  </script>
+  <?php endif; ?>
 </div>
 
 <script>

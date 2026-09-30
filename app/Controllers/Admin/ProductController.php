@@ -51,9 +51,29 @@ class ProductController extends Controller
             return $this->view('errors/404', ['title' => '产品不存在'], 'layout_admin');
         }
         $prices = DB::all("SELECT * FROM `product_prices` WHERE `product_id` = ? ORDER BY `price`", [(int)$id]);
+        $options = DB::all("SELECT * FROM `product_config_options` WHERE `product_id` = ? ORDER BY `sort`", [(int)$id]);
         return $this->view('admin/product_form', [
-            'title' => '编辑产品', 'product' => $product, 'prices' => $prices, 'user' => $admin,
+            'title' => '编辑产品', 'product' => $product, 'prices' => $prices, 'options' => $options, 'user' => $admin,
         ], 'layout_admin');
+    }
+
+    /** 从上游重新同步产品配置项（操作系统/数据盘等） */
+    public function resync(string $id): void
+    {
+        $admin = $this->requireAdmin();
+        csrf_check();
+        $product = DB::get("SELECT * FROM `products` WHERE `id` = ? LIMIT 1", [(int)$id]);
+        if (!$product || (int)$product['upstream_pid'] <= 0) {
+            flash('error', '产品未关联上游');
+            redirect('/admin/products/' . (int)$id . '/edit');
+        }
+        $ret = UpstreamService::syncProductConfig((int)$product['id']);
+        if ($ret['ok']) {
+            flash('success', '配置项已从上游同步');
+        } else {
+            flash('error', '同步失败: ' . $ret['msg']);
+        }
+        redirect('/admin/products/' . (int)$id . '/edit');
     }
 
     public function update(string $id): void
