@@ -1,0 +1,32 @@
+name: PHP
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  php-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        coverage: none
+
+    - name: PHP syntax check
+      run: |
+        fail=0
+        while IFS= read -r -d '' f; do
+          php -l "$f" > /dev/null || fail=1
+        done < <(find . -name '*.php' -not -path './vendor/*' -print0)
+        if [ "$fail" -ne 0 ]; then
+          echo "PHP syntax errors found"
+          exit 1
+        fi
+        echo "All PHP files passed syntax check"
